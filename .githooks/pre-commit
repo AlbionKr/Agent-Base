@@ -1,0 +1,8 @@
+#!/bin/sh
+# Blocks commits containing credentials or key files. See scripts/check_secrets.py.
+# Enable once per clone:  git config core.hooksPath .githooks
+PY=$(command -v python || command -v python3) || {
+  echo "pre-commit: python not found, cannot run the secret scan" >&2
+  exit 1
+}
+exec "$PY" scripts/check_secrets.py --staged

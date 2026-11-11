@@ -1,0 +1,274 @@
+{
+  "data": [
+    {
+      "id": "448840",
+      "title": "BTC price today at 4:25am EST",
+      "slug": "btc-price-today-at-425am-est",
+      "type": "binary",
+      "category": "Crypto",
+      "ticker": "BTC05M2611110925",
+      "status": "active",
+      "createdAt": "2026-11-11T08:15:11.566Z",
+      "contracts": [
+        {
+          "id": "448840-1098862",
+          "label": "Up",
+          "description": {
+            "data": {},
+            "content": [
+              {
+                "data": {},
+                "marks": [],
+                "value": "If the price of Bitcoin (BTC) is greater than or equal to the price specified in the title on November 11, 2026 at 4:25am ET, this market will resolve to Yes. Otherwise, it will resolve to No. If no eligible trade occurs during the contract window, this contract will resolve based on the most recent traded price prior. Outcome verified against the LS-LRRR-XBTUSD index. View the [full rules](https://assets.gemini.com/predictions/terms_and_conditions/btc_398860b3-ea2f-47a7-b167-a8c6ad03d6d7.pdf).",
+                "nodeType": "text"
+              }
+            ],
+            "nodeType": "document"
+          },
+          "prices": {
+            "buy": {
+              "yes": "0.99",
+              "no": "0.03"
+            },
+            "sell": {
+              "yes": "0.97",
+              "no": "0.01"
+            },
+            "bestBid": "0.97",
+            "bestAsk": "0.99",
+            "lastTradePrice": "0.93"
+          },
+          "status": "active",
+          "createdAt": "2026-11-11T08:15:11.566Z",
+          "termsAndConditionsUrl": "https://assets.gemini.com/predictions/terms_and_conditions/btc_398860b3-ea2f-47a7-b167-a8c6ad03d6d7.pdf",
+          "ticker": "UP",
+          "instrumentSymbol": "GEMI-BTC05M2611110925-UP",
+          "marketState": "open",
+          "abbreviatedName": "Up",
+          "color": "#4CAF50",
+          "expiryDate": "2026-11-11T09:25:00.000Z",
+          "effectiveDate": "2026-11-11T09:20:00.000Z",
+          "sortOrder": 0,
+          "strike": {
+            "type": "reference",
+            "value": "73541.96",
+            "availableAt": "2026-11-11T09:20:00.000Z"
+          },
+          "source": "LS-LRRR-XBTUSD",
+          "isCombo": false,
+          "quantityIncrement": "0.01",
+          "quantityMinimum": "0.01",
+          "priceIncrement": "0.01",
+          "quoteAssetPrecision": 2,
+          "priceMinimum": "0.01"
+        }
+      ],
+      "effectiveDate": "2026-11-11T08:15:11.566Z",
+      "isLive": true,
+      "participants": [],
+      "description": "Interval BTC price prediction event expiring on November 11, 2026 at 4:25am ET",
+      "imageUrl": "https://assets.gemini.com/predictions/images/btc_ace6c0f4-f500-4b7d-a66c-a3ea5ea1d9e9.avif",
+      "series": "BTC05M",
+      "volume": "156.72",
+      "volume24h": "156.72",
+      "tags": [
+        "Bitcoin"
+      ],
+      "expiryDate": "2026-11-11T09:25:00.000Z",
+      "startTime": "2026-11-11T09:20:00.000Z",
+      "termsLink": "https://assets.gemini.com/predictions/terms_and_conditions/btc_398860b3-ea2f-47a7-b167-a8c6ad03d6d7.pdf",
+      "subcategory": {
+        "id": 32,
+        "slug": "crypto_bitcoin",
+        "name": "Bitcoin",
+        "path": [
+          "Crypto",
+          "Bitcoin"
+        ]
+      },
+      "socialImageUrl": "https://assets.gemini.com/predictions/images/btc_29510bf2-83f3-4d5e-beec-2d09f473347c.png",
+      "featuredImageUrl": "https://assets.gemini.com/predictions/images/Top_10_-_Bitcoin_1_23ea2ded-f899-4bbd-955d-355794d5ef0d.avif",
+      "template": "crypto-up-down",
+      "eventTags": [
+        {
+          "id": 11,
+          "name": "Five Minute",
+          "slug": "five-minute"
+        },
+        {
+          "id": 19,
+          "name": "Up Down",
+          "slug": "up-down"
+        }
+      ],
+      "source": "LS-LRRR-XBTUSD",
+      "sourceDetails": {
+        "agency": "lukka",
+        "index": "LS-LRRR-XBTUSD"
+      },
+      "volumeDelta24hPct": "0"
+    },
+    {
+      "id": "448812",
+      "title": "BTC price today at 5am EST",
+      "slug": "btc-price-today-at-5am-est",
+      "type": "categorical",
+      "category": "Crypto",
+      "ticker": "BTC2611111000",
+      "status": "active",
+      "createdAt": "2026-11-11T07:55:34.234Z",
+      "contracts": [
+        {
+          "id": "448812-1099327",
+          "label": "$73,300 or above",
+          "description": {
+            "data": {},
+            "content": [
+              {
+                "data": {},
+                "marks": [],
+                "value": "If the price of Bitcoin (BTC) is $73,300 or above on November 11, 2026 at 5am ET, this market will resolve to Yes. Otherwise, it will resolve to No. If no eligible trade occurs during the contract window, this contract will resolve based on the most recent traded price prior. Outcome verified against the LS-LRRR-XBTUSD index. View the [full rules](https://assets.gemini.com/predictions/terms_and_conditions/btc_398860b3-ea2f-47a7-b167-a8c6ad03d6d7.pdf).",
+                "nodeType": "text"
+              }
+            ],
+            "nodeType": "document"
+          },
+          "prices": {
+            "buy": {
+              "yes": "0.98",
+              "no": "0.08"
+            },
+            "sell": {
+              "yes": "0.92",
+              "no": "0.02"
+            },
+            "bestBid": "0.92",
+            "bestAsk": "0.98"
+          },
+          "status": "active",
+          "createdAt": "2026-11-11T07:55:34.234Z",
+          "termsAndConditionsUrl": "https://assets.gemini.com/predictions/terms_and_conditions/btc_398860b3-ea2f-47a7-b167-a8c6ad03d6d7.pdf",
+          "ticker": "HI73300",
+          "instrumentSymbol": "GEMI-BTC2611111000-HI73300",
+          "marketState": "open",
+          "abbreviatedName": ">$73,300",
+          "color": "#4CAF50",
+          "expiryDate": "2026-11-11T10:00:00.000Z",
+          "effectiveDate": "2026-11-11T09:00:00.000Z",
+          "sortOrder": 9,
+          "strike": {
+            "type": "above",
+            "value": "73300"
+          },
+          "source": "LS-LRRR-XBTUSD",
+          "isCombo": false,
+          "quantityIncrement": "0.01",
+          "quantityMinimum": "0.01",
+          "priceIncrement": "0.01",
+          "quoteAssetPrecision": 2,
+          "priceMinimum": "0.01"
+        },
+        {
+          "id": "448812-1099194",
+          "label": "$73,400 or above",
+          "description": {
+            "data": {},
+            "content": [
+              {
+                "data": {},
+                "marks": [],
+                "value": "If the price of Bitcoin (BTC) is $73,400 or above on November 11, 2026 at 5am ET, this market will resolve to Yes. Otherwise, it will resolve to No. If no eligible trade occurs during the contract window, this contract will resolve based on the most recent traded price prior. Outcome verified against the LS-LRRR-XBTUSD index. View the [full rules](https://assets.gemini.com/predictions/terms_and_conditions/btc_398860b3-ea2f-47a7-b167-a8c6ad03d6d7.pdf).",
+                "nodeType": "text"
+              }
+            ],
+            "nodeType": "document"
+          },
+          "prices": {
+            "buy": {
+              "yes": "0.93",
+              "no": "0.13"
+            },
+            "sell": {
+              "yes": "0.87",
+              "no": "0.07"
+            },
+            "bestBid": "0.87",
+            "bestAsk": "0.93",
+            "lastTradePrice": "0.75"
+          },
+          "status": "active",
+          "createdAt": "2026-11-11T07:55:34.234Z",
+          "termsAndConditionsUrl": "https://assets.gemini.com/predictions/terms_and_conditions/btc_398860b3-ea2f-47a7-b167-a8c6ad03d6d7.pdf",
+          "ticker": "HI73400",
+          "instrumentSymbol": "GEMI-BTC2611111000-HI73400",
+          "marketState": "open",
+          "abbreviatedName": ">$73,400",
+          "color": "#4CAF50",
+          "expiryDate": "2026-11-11T10:00:00.000Z",
+          "effectiveDate": "2026-11-11T09:00:00.000Z",
+          "sortOrder": 8,
+          "strike": {
+            "type": "above",
+            "value": "73400"
+          },
+          "source": "LS-LRRR-XBTUSD",
+          "isCombo": false,
+          "quantityIncrement": "0.01",
+          "quantityMinimum": "0.01",
+          "priceIncrement": "0.01",
+          "quoteAssetPrecision": 2,
+          "priceMinimum": "0.01"
+        }
+      ],
+      "effectiveDate": "2026-11-11T07:55:34.234Z",
+      "isLive": true,
+      "participants": [],
+      "description": "Interval BTC price prediction event expiring on November 11, 2026 at 5am ET",
+      "imageUrl": "https://assets.gemini.com/predictions/images/btc_ace6c0f4-f500-4b7d-a66c-a3ea5ea1d9e9.avif",
+      "series": "BTC1H",
+      "volume": "4472.49",
+      "volume24h": "4472.49",
+      "tags": [
+        "Bitcoin"
+      ],
+      "expiryDate": "2026-11-11T10:00:00.000Z",
+      "startTime": "2026-11-11T09:00:00.000Z",
+      "termsLink": "https://assets.gemini.com/predictions/terms_and_conditions/btc_398860b3-ea2f-47a7-b167-a8c6ad03d6d7.pdf",
+      "subcategory": {
+        "id": 32,
+        "slug": "crypto_bitcoin",
+        "name": "Bitcoin",
+        "path": [
+          "Crypto",
+          "Bitcoin"
+        ]
+      },
+      "socialImageUrl": "https://assets.gemini.com/predictions/images/btc_29510bf2-83f3-4d5e-beec-2d09f473347c.png",
+      "featuredImageUrl": "https://assets.gemini.com/predictions/images/Top_10_-_Bitcoin_1_23ea2ded-f899-4bbd-955d-355794d5ef0d.avif",
+      "template": "prices-ladder",
+      "eventTags": [
+        {
+          "id": 13,
+          "name": "Hourly",
+          "slug": "hourly"
+        },
+        {
+          "id": 18,
+          "name": "Reference",
+          "slug": "reference"
+        }
+      ],
+      "source": "LS-LRRR-XBTUSD",
+      "sourceDetails": {
+        "agency": "lukka",
+        "index": "LS-LRRR-XBTUSD"
+      },
+      "volumeDelta24hPct": "0"
+    }
+  ],
+  "pagination": {
+    "limit": 2,
+    "offset": 0,
+    "total": 98
+  }
+}

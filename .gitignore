@@ -1,0 +1,38 @@
+# --- secrets: never commit ---
+.env
+.env.*
+!.env.example
+.keys/
+*keypair*.json
+id.json
+*.pem
+*.key
+
+# --- python ---
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# --- node ---
+node_modules/
+dist/
+*.tsbuildinfo
+
+# --- anchor / solana ---
+target/
+.anchor/
+test-ledger/
+
+# --- runtime data ---
+*.sqlite
+*.sqlite3
+*.db
+*.log
+
+# --- editor / os ---
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
