@@ -274,6 +274,10 @@ class Gate:
 
     def claim(self, action_id: str) -> Action:
         """Hand an allowed action to the executor. Works once per action."""
+        return self.claim_for(action_id)[1]
+
+    def claim_for(self, action_id: str) -> tuple[str, Action]:
+        """Like `claim`, and also says which agent the action belongs to."""
         record = self._audit.action(action_id)
         if record is None:
             raise NotExecutable(f"action {action_id} does not exist")
@@ -286,7 +290,7 @@ class Gate:
         if not released:
             raise NotExecutable(f"action {action_id} is {record.status.value}, not executable")
         self._journal.emit("execution_started", {"action_id": action_id}, agent_id=record.agent_id)
-        return parse_action(record.action_json)
+        return record.agent_id, parse_action(record.action_json)
 
     def report_execution(self, action_id: str, *, ok: bool, detail: dict[str, Any]) -> AuditEvent:
         record = self._audit.action(action_id)

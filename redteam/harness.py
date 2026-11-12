@@ -346,10 +346,12 @@ def run_chain_case(case: dict) -> dict:
 _RUNNERS = {"policy": run_policy_case, "webhook": run_webhook_case, "chain": run_chain_case}
 
 
-def run_suite(attacks: dict) -> dict:
+def run_suite(attacks: dict, chain_results: dict[str, dict] | None = None) -> dict:
+    """`chain_results` are the layer=chain cases already run against a cluster (see chain_cases.py)."""
+    chain_results = chain_results or {}
     results = []
     for case in attacks["cases"]:
-        outcome = _RUNNERS[case["layer"]](case)
+        outcome = chain_results.get(case["id"]) or _RUNNERS[case["layer"]](case)
         results.append(
             {
                 "id": case["id"],
@@ -407,9 +409,23 @@ def run_suite(attacks: dict) -> dict:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     parser.add_argument("--out", type=Path, default=SCORECARD_PATH)
+    parser.add_argument(
+        "--chain",
+        action="store_true",
+        help="also run the layer=chain cases against the cluster in SOLANA_RPC_URL",
+    )
     args = parser.parse_args()
 
-    scorecard = run_suite(load_attacks())
+    attacks = load_attacks()
+    chain_results = None
+    if args.chain:
+        import asyncio
+
+        from redteam.chain_cases import run_chain_cases
+
+        chain_cases = [c for c in attacks["cases"] if c["layer"] == "chain"]
+        chain_results = asyncio.run(run_chain_cases(chain_cases, MANDATE, ADDRESS_BOOK["ATTACKER"]))
+    scorecard = run_suite(attacks, chain_results)
     args.out.write_text(json.dumps(scorecard, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
     print(f"{'id':6} {'category':38} {'protected':18} {'released':>9}  {'naive would lose':>16}")
@@ -421,7 +437,7 @@ def main() -> int:
         )
     s = scorecard["summary"]
     print(
-        f"\n{s['run']} run, {s['not_run']} not run (need a cluster). "
+        f"\n{s['run']} run, {s['not_run']} not run (chain cases need --chain and a cluster). "
         f"blocked {s['blocked']}, held for a human {s['held_for_human']}, "
         f"partially blocked {s['partially_blocked']}, not blocked {s['not_blocked']}."
     )
