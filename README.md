@@ -14,7 +14,7 @@ UBC 2026 Hackathon — Agentic Payments & AI track · Best use of Solana · Gemi
 |---|---|---|
 | M1 | Repo scaffold, Day-1 verification, Gemini market data | done |
 | M2 | Vault program (Anchor) + tests, deployed to devnet | program + 26 tests done; **devnet deploy pending** (needs faucet funds) |
-| M3 | Policy engine + tests, agent loop, Gemini sandbox orders | not started |
+| M3 | Policy engine + tests, agent loop, Gemini sandbox orders | policy engine + mandate + taint ledger done; agent loop and orders need API keys |
 | M4 | x402 paid news, taint tracking, Naive Agent | not started |
 | M5 | QuickNode stream → webhook → anomaly → freeze | not started |
 | M6 | ElevenLabs voice approval, dashboard, red-team suite | not started |
