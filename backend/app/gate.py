@@ -103,6 +103,8 @@ class Gate:
         self._trusted_owner = trusted_owner
         self._new_id = id_factory
         self._agents: dict[str, _Agent] = {}
+        # Called with the action id when a human approves. The executor hooks in here.
+        self.on_approved: Callable[[str], None] | None = None
 
     # ------------------------------------------------------------- agents
 
@@ -269,6 +271,8 @@ class Gate:
             _STATUS_FOR_APPROVAL[approval.status],
         )
         self._journal.emit("approval_resolved", approval.to_json(), agent_id=approval.agent_id)
+        if approval.status is ApprovalStatus.APPROVED and self.on_approved is not None:
+            self.on_approved(approval.action_id)
 
     # ----------------------------------------------------------- execution
 

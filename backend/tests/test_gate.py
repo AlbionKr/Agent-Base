@@ -393,3 +393,21 @@ def test_a_malformed_proposal_cannot_stuff_the_log_with_its_own_text():
     assert proposal.decision.verdict is Verdict.DENY
     assert len(proposal.decision.reason) <= 300
     assert len(w.last("decision").payload["raw"]) <= 2000
+
+
+def test_the_executor_hook_fires_only_for_approvals():
+    w = World()
+    released = []
+    w.gate.on_approved = released.append
+
+    approved = w.gate.propose(AGENT, big_order())
+    w.gate.resolve_approval(approved.approval.approval_id, approve=True, via="voice")
+    w.clock.advance(20)
+    refused = w.gate.propose(AGENT, big_order())
+    w.gate.resolve_approval(refused.approval.approval_id, approve=False, via="voice")
+    w.clock.advance(20)
+    w.gate.propose(AGENT, big_order())
+    w.clock.advance(61)
+    w.gate.expire_approvals()
+
+    assert released == [approved.action_id]

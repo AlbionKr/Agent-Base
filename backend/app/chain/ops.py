@@ -18,7 +18,9 @@ from urllib.parse import quote, urlsplit
 from solders.keypair import Keypair
 from solders.pubkey import Pubkey
 from solders.system_program import TransferParams, transfer
-from spl.token.instructions import create_idempotent_associated_token_account
+from spl.token.constants import TOKEN_PROGRAM_ID
+from spl.token.instructions import create_idempotent_associated_token_account, transfer_checked
+from spl.token.models import TransferCheckedParams
 
 from app.chain import vault_ix
 from app.chain.client import SolanaClient, load_keypair, save_new_keypair
@@ -190,3 +192,41 @@ class GuardianFreezer:
         )
         # freeze_agent is idempotent onchain: freezing a frozen agent succeeds.
         return await self._chain.send([ix], self._guardian)
+
+
+class PlainWallet:
+    """An ordinary wallet with no vault and no caps: what the Naive Agent has."""
+
+    def __init__(self, chain: SolanaClient, ref: VaultRef, keypair: Keypair):
+        self._chain, self._ref, self._keypair = chain, ref, keypair
+
+    @property
+    def address(self) -> Pubkey:
+        return self._keypair.pubkey()
+
+    async def balance(self) -> int:
+        return await self._chain.token_balance(self._ref.token_account(self.address)) or 0
+
+    async def send(self, payee: str, amount_units: int) -> str:
+        """Plain SPL transfer. If asked for more than it holds, it sends everything it has."""
+        destination = Pubkey.from_string(payee)
+        amount = min(amount_units, await self.balance())
+        if amount <= 0:
+            raise ValueError("wallet is empty")
+        return await self._chain.send(
+            [
+                create_idempotent_associated_token_account(self.address, destination, self._ref.usdc_mint),
+                transfer_checked(
+                    TransferCheckedParams(
+                        program_id=TOKEN_PROGRAM_ID,
+                        source=self._ref.token_account(self.address),
+                        mint=self._ref.usdc_mint,
+                        dest=self._ref.token_account(destination),
+                        owner=self.address,
+                        amount=amount,
+                        decimals=6,
+                    )
+                ),
+            ],
+            self._keypair,
+        )
