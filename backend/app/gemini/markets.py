@@ -16,12 +16,14 @@ from __future__ import annotations
 
 import json
 from datetime import datetime
-from decimal import Decimal, InvalidOperation
-from typing import Annotated, Any
+from decimal import Decimal
+from typing import Any
 
 import httpx
-from pydantic import BaseModel, BeforeValidator, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 from pydantic.alias_generators import to_camel
+
+from app.decimals import OptionalDecimal
 
 PRODUCTION_URL = "https://api.gemini.com"
 SANDBOX_URL = "https://api.sandbox.gemini.com"
@@ -38,29 +40,7 @@ class GeminiAPIError(RuntimeError):
         super().__init__(f"Gemini returned HTTP {status_code} for {url}: {body[:200]}")
 
 
-def _to_decimal(value: Any) -> Decimal | None:
-    if value is None or value == "":
-        return None
-    if isinstance(value, bool) or isinstance(value, float):
-        raise ValueError(
-            f"expected a decimal string, got {type(value).__name__}; "
-            "floats are not allowed for prices or quantities"
-        )
-    if isinstance(value, Decimal):
-        result = value
-    elif isinstance(value, (str, int)):
-        try:
-            result = Decimal(value)
-        except InvalidOperation as exc:
-            raise ValueError(f"not a decimal string: {value!r}") from exc
-    else:
-        raise ValueError(f"expected a decimal string, got {type(value).__name__}")
-    if not result.is_finite():
-        raise ValueError(f"not a finite decimal: {value!r}")
-    return result
-
-
-DecimalStr = Annotated[Decimal | None, BeforeValidator(_to_decimal)]
+DecimalStr = OptionalDecimal
 
 
 def flatten_rich_text(node: Any) -> str:

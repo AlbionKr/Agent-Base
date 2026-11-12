@@ -13,7 +13,7 @@ UBC 2026 Hackathon — Agentic Payments & AI track · Best use of Solana · Gemi
 | Milestone | Scope | State |
 |---|---|---|
 | M1 | Repo scaffold, Day-1 verification, Gemini market data | done |
-| M2 | Vault program (Anchor) + tests, deployed to devnet | not started |
+| M2 | Vault program (Anchor) + tests, deployed to devnet | program + 26 tests done; **devnet deploy pending** (needs faucet funds) |
 | M3 | Policy engine + tests, agent loop, Gemini sandbox orders | not started |
 | M4 | x402 paid news, taint tracking, Naive Agent | not started |
 | M5 | QuickNode stream → webhook → anomaly → freeze | not started |
@@ -73,6 +73,52 @@ Print live BTC 5-minute prediction markets from Gemini:
 ```bash
 .venv/Scripts/python -m scripts.print_markets --sandbox-parity
 ```
+
+## Vault program (Solana devnet)
+
+Program ID: `8en8vCL4DR8e3Y739FSgKtLzFvTwiMvD8GVgnKGTBV2x` (not yet deployed).
+
+An agent's session key can move at most `per_tx_cap` per transaction and `daily_cap` per rolling 24 hours, only to its own wallet (`top_up`) or to an allowlisted payee (`pay`), only until `expires_at`, and only while neither the agent nor the vault is frozen. The guardian (backend key) can freeze and nothing else; only the owner can unfreeze, change policy, rotate keys or withdraw.
+
+Building needs Rust, the Solana CLI and Anchor 1.1.2. On Windows these run in WSL; `scripts/wsl_run.sh` runs any command from the repo root with that toolchain on the path.
+
+Install the toolchain (once, inside WSL or Linux):
+
+```bash
+bash scripts/setup_wsl_toolchain.sh
+```
+
+Create local devnet keypairs in `.keys/` (prints public keys only):
+
+```bash
+bash scripts/wsl_run.sh bash scripts/setup_keys.sh
+```
+
+Build and run the 26 security tests (LiteSVM, in-process, clock-controlled):
+
+```bash
+bash scripts/wsl_run.sh anchor build
+```
+
+```bash
+bash scripts/wsl_run.sh cargo test -p vault
+```
+
+Deploy to devnet (owner wallet needs devnet SOL from https://faucet.solana.com):
+
+```bash
+bash scripts/wsl_run.sh bash scripts/deploy_devnet.sh
+```
+
+Seed a vault, one agent and a first capped top-up (owner needs devnet USDC from https://faucet.circle.com):
+
+```bash
+.venv/Scripts/python -m scripts.seed_devnet
+```
+
+From a Windows shell, prefix the `bash scripts/...` commands with `wsl -d Ubuntu --` and use the `/mnt/c/...` path to the repo.
+
+The Python client in `backend/app/chain/vault_ix.py` builds instructions by hand; `backend/tests/test_vault_ix.py` checks every builder and decoder against the Anchor-generated IDL so the two cannot drift.
 
 ## Secrets
 
