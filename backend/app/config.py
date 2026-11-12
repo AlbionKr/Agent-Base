@@ -82,8 +82,8 @@ def backend_settings_from(env: Mapping[str, str]) -> BackendSettings:
             "mandates are only accepted when signed by it"
         ) from None
 
-    api_port = _int(env, "BACKEND_PORT", 8000)
-    webhook_port = _int(env, "WEBHOOK_PORT", 8001)
+    api_port = _int(env, "BACKEND_PORT", 8787)
+    webhook_port = _int(env, "WEBHOOK_PORT", 8788)
     if api_port == webhook_port:
         raise RuntimeError("BACKEND_PORT and WEBHOOK_PORT must be different ports")
 

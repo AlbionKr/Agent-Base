@@ -13,7 +13,7 @@ OWNER = addr(1)
 def test_defaults_need_only_the_owner_address():
     s = backend_settings_from({"OWNER_ADDRESS": OWNER})
     assert s.owner_address == OWNER
-    assert (s.api_port, s.webhook_port) == (8000, 8001)
+    assert (s.api_port, s.webhook_port) == (8787, 8788)
     assert s.audit_db_path == REPO_ROOT / "data" / "audit.sqlite"
     assert s.frontend_origins == frozenset({"http://localhost:5173", "http://127.0.0.1:5173"})
     assert s.usdc_mint == DEVNET_USDC_MINT

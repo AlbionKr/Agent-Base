@@ -4,8 +4,8 @@ Python 3.12, FastAPI. One process, two listeners, both bound to `127.0.0.1`.
 
 | Port | What | Who may reach it |
 |---|---|---|
-| `BACKEND_PORT` (8000) | Operator API: agents, proposals, approvals, audit log, live event stream | This machine only |
-| `WEBHOOK_PORT` (8001) | `POST /webhooks/quicknode` and nothing else | The one port a tunnel may point at |
+| `BACKEND_PORT` (8787) | Operator API: agents, proposals, approvals, audit log, live event stream | This machine only |
+| `WEBHOOK_PORT` (8788) | `POST /webhooks/quicknode` and nothing else | The one port a tunnel may point at |
 
 ```bash
 .venv/Scripts/python -m app.main

@@ -240,3 +240,16 @@ def test_a_payment_still_waiting_for_approval_does_not_excuse_an_outflow():
 
     assert w.last("anomaly").payload["rules"] == ["UNEXPECTED_OUTFLOW"]
     assert w.last("outflow_observed").payload["matched_action_id"] is None
+
+
+def test_after_the_owner_unfreezes_a_new_anomaly_freezes_again():
+    freezer = RecordingFreezer()
+    w, sentinel = setup(freezer)
+    handle(sentinel, batch(payment_tx(50_000, ATTACKER, signature="a")))
+    w.gate.set_frozen(AGENT, False)
+    sentinel.clear(AGENT)
+
+    handle(sentinel, batch(payment_tx(50_000, ATTACKER, signature="b")))
+
+    assert len(freezer.calls) == 2
+    assert w.gate.agents()[0]["frozen"] is True

@@ -53,6 +53,10 @@ class Sentinel:
     def watched(self) -> dict[str, str]:
         return dict(self._wallets)
 
+    def clear(self, agent_id: str) -> None:
+        """The owner unfroze the agent: a later anomaly must freeze it again."""
+        self._frozen_by_us.discard(agent_id)
+
     async def handle(self, payload: Any) -> None:
         """Process one authenticated delivery. Raises PayloadError on a bad shape."""
         for tx in parse_payload(payload):

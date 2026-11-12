@@ -125,6 +125,7 @@ class Gate:
                 "mandate_hash": policy.mandate_hash.hex(),
                 "mandate": signed.mandate.model_dump(mode="json"),
                 "signer": signed.signer,
+                "signature": signed.signature,
             },
             agent_id=policy.agent_id,
         )

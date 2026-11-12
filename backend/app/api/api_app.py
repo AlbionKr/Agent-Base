@@ -18,12 +18,19 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel, ConfigDict, Field
 
+from datetime import timedelta
+from typing import TYPE_CHECKING
+
 from app.api.guard import LocalOperatorOnly
 from app.api.services import Services
 from app.approvals import AlreadyResolved, UnknownApproval
 from app.events import sse_frames
 from app.gate import UnknownAgent
-from app.policy.mandate import MandateError, SignedMandate
+from app.decimals import StrictDecimal
+from app.policy.mandate import Mandate, MandateError, SignedMandate
+
+if TYPE_CHECKING:
+    from app.stack import Stack
 
 
 class ContextItem(BaseModel):
@@ -40,11 +47,36 @@ class ApprovalDecision(BaseModel):
     decision: Literal["approve", "deny"]
 
 
+class CreateAgent(BaseModel):
+    """The "place a structure" form. The owner key on this machine signs the mandate."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    agent_name: str = Field(min_length=1, max_length=40)
+    allowed_markets: list[str] = Field(default_factory=lambda: ["GEMI-BTC05M*"], max_length=8)
+    max_per_action_usd: StrictDecimal
+    max_per_day_usd: StrictDecimal
+    approval_threshold_usd: StrictDecimal
+    max_actions_per_minute: int = Field(default=6, ge=1, le=60)
+    days_valid: int = Field(default=7, ge=1, le=30)
+
+
+def _slug(name: str) -> str:
+    slug = "".join(c.lower() if c.isalnum() else "-" for c in name).strip("-")
+    return "-".join(part for part in slug.split("-") if part) or "agent"
+
+
+def _percentile(sorted_values: list[int], fraction: float) -> int | None:
+    if not sorted_values:
+        return None
+    return sorted_values[min(len(sorted_values) - 1, int(fraction * len(sorted_values)))]
+
+
 def _error(status: int, message: str) -> JSONResponse:
     return JSONResponse({"error": message}, status_code=status)
 
 
-def create_api_app(services: Services) -> FastAPI:
+def create_api_app(services: Services, stack: "Stack | None" = None) -> FastAPI:
     app = FastAPI(title="Agent Base operator API", docs_url=None, redoc_url=None, openapi_url=None)
     # Added first = innermost. The guard is added last so it sees every request first.
     app.add_middleware(
@@ -138,5 +170,99 @@ def create_api_app(services: Services) -> FastAPI:
             media_type="text/event-stream",
             headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
         )
+
+    # ------------------------------------------------------------- metrics
+
+    @app.get("/metrics")
+    async def metrics():
+        decisions = services.audit.events(kind="decision", limit=100_000)
+        latencies = sorted(e.payload["latency_us"] for e in decisions)
+        by_verdict = {"ALLOW": 0, "REQUIRE_APPROVAL": 0, "DENY": 0}
+        for event in decisions:
+            by_verdict[event.payload["verdict"]] += 1
+        return {
+            "decisions": len(decisions),
+            "by_verdict": by_verdict,
+            "blocked": by_verdict["DENY"],
+            "blocked_citing_untrusted_content": sum(
+                1 for e in decisions if e.payload["verdict"] == "DENY" and e.payload["taint"]
+            ),
+            "policy_latency_us": {
+                "p50": _percentile(latencies, 0.50),
+                "p95": _percentile(latencies, 0.95),
+                "max": latencies[-1] if latencies else None,
+            },
+            "freezes": len(services.audit.events(kind="freeze", limit=100_000)),
+            "anomalies": len(services.audit.events(kind="anomaly", limit=100_000)),
+        }
+
+    @app.get("/redteam/scorecard")
+    async def redteam_scorecard():
+        from app.stack import read_scorecard
+
+        scorecard = read_scorecard()
+        if scorecard is None:
+            return _error(404, "no scorecard yet: run python -m redteam.harness")
+        return scorecard
+
+    if stack is None:
+        return app
+
+    # ------------------------------------- routes that need the full stack
+
+    @app.get("/config")
+    async def config():
+        return stack.config()
+
+    @app.get("/state")
+    async def state():
+        return await stack.state()
+
+    @app.post("/owner/agents", status_code=201)
+    async def create_agent(body: CreateAgent):
+        if stack.provisioner is None:
+            return _error(503, "agents cannot be created here: the chain or the owner key is not available")
+        from app.stack import _env
+
+        agent_id = _slug(body.agent_name)
+        if any(a["agent_id"] == agent_id for a in gate.agents()):
+            return _error(409, f"an agent named {agent_id!r} already exists")
+        payee, news_url = _env("X402_PAY_TO"), _env("X402_NEWS_URL")
+        try:
+            mandate = Mandate(
+                agent_id=agent_id,
+                agent_name=body.agent_name,
+                allowed_action_types=("x402_payment", "gemini_order", "transfer"),
+                allowed_markets=tuple(body.allowed_markets),
+                allowed_payees=(payee,) if payee else (),
+                allowed_endpoints=(news_url,) if news_url else (),
+                max_per_action_usd=body.max_per_action_usd,
+                max_per_day_usd=body.max_per_day_usd,
+                approval_threshold_usd=body.approval_threshold_usd,
+                max_actions_per_minute=body.max_actions_per_minute,
+                expires_at=services.clock() + timedelta(days=body.days_valid),
+            )
+            await stack.create_agent(mandate)
+        except (MandateError, ValueError) as exc:
+            return _error(400, str(exc))
+        except Exception as exc:  # chain errors: report them, the agent was not created
+            return _error(502, f"{type(exc).__name__}: {exc}"[:400])
+        return {"agent_id": agent_id, **(await stack.state())["agents"].get(agent_id, {})}
+
+    @app.post("/owner/agents/{agent_id}/unfreeze")
+    async def unfreeze(agent_id: str):
+        gate.policy(agent_id)  # 404 if unknown
+        try:
+            signature = await stack.unfreeze(agent_id)
+        except Exception as exc:
+            return _error(502, f"{type(exc).__name__}: {exc}"[:400])
+        return {"agent_id": agent_id, "signature": signature}
+
+    @app.post("/agents/{agent_id}/cycle")
+    async def run_cycle(agent_id: str):
+        agent = stack.agents.get(agent_id)
+        if agent is None:
+            raise UnknownAgent(agent_id)
+        return await agent.cycle()
 
     return app
