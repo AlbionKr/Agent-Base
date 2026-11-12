@@ -53,7 +53,9 @@ async def start(settings: BackendSettings) -> tuple[Stack, list[uvicorn.Server],
     servers = [
         uvicorn.Server(
             uvicorn.Config(
-                app, host=HOST, port=port, proxy_headers=False, server_header=False, log_level="warning"
+                app, host=HOST, port=port, proxy_headers=False, server_header=False, log_level="warning",
+                # An open event stream never ends by itself; do not wait for it on shutdown.
+                timeout_graceful_shutdown=2,
             )
         )
         for app, port in (
@@ -72,6 +74,8 @@ async def start(settings: BackendSettings) -> tuple[Stack, list[uvicorn.Server],
 
 
 async def stop(stack: Stack, servers: list[uvicorn.Server], tasks: list[asyncio.Task]) -> None:
+    # Open event streams are cut off after the grace period; that is expected, not an error.
+    logging.getLogger("uvicorn.error").setLevel(logging.CRITICAL)
     for server in servers:
         server.should_exit = True
     await asyncio.gather(*tasks[:2], return_exceptions=True)

@@ -44,6 +44,27 @@ Budget accounting fails closed: an allowed action reserves its amount immediatel
 
 There is no route to execute anything. Over HTTP you can only ask for a decision.
 
+With the full stack (`python -m app.main` or `python -m scripts.demo`) these are added:
+
+| Route | Purpose |
+|---|---|
+| `GET /config` | cluster, program id, and the labels saying what is and is not real in this run |
+| `GET /state` | balances and onchain allowances, read from the chain |
+| `GET /metrics` · `GET /redteam/scorecard` | counters and policy decision time · the last red-team run |
+| `POST /owner/agents` | create an agent: signs the mandate with the owner key on this machine and creates the onchain allowance |
+| `POST /owner/agents/{id}/unfreeze` | owner unfreeze |
+| `POST /agents/{id}/cycle` | run one decision cycle now |
+| `GET /voice/session` · `POST /approvals/{id}/voice-decision` | ElevenLabs signed URL · a voice answer with its transcript |
+
+## The rest of the backend
+
+- **`app/stack.py`** — builds everything from the environment and reports what is not configured. After a restart it re-registers agents from the audit log (signatures are re-verified) and re-reads each agent's freeze state from the chain.
+- **`app/agent/`** — the decision loop (`runtime.py`), the proposers (`proposer.py`: Claude, or scripted and labelled), and the x402 payer (`x402_pay.py`), which signs only an offer that matches what the gate approved.
+- **`app/executor.py`** — runs only what the gate releases.
+- **`app/chain/ops.py`** — three roles with three keys: owner (provisioning), agent session keys (spending inside the allowance), guardian (freeze only).
+- **`app/gemini/trading.py`** — sandbox-only `order.place` with a hard notional cap. Not yet run against Gemini.
+- **`app/voice.py`** — ElevenLabs signed URL and the spoken-yes check. Not yet run against ElevenLabs.
+
 The API can register agents and approve spending, so binding to loopback is not treated as enough (`app/api/guard.py`). Every request is refused unless the socket peer is loopback, it carries no proxy or tunnel headers, its `Host` is a loopback name (DNS rebinding), and its `Origin`, if any, is the frontend (`FRONTEND_ORIGINS`; blocks cross-site requests from other pages in the browser). uvicorn's `X-Forwarded-For` handling is switched off so the guard always sees the real peer.
 
 ## QuickNode webhook
@@ -66,7 +87,7 @@ An authentic delivery goes to `app/quicknode/sentinel.py`, which computes USDC t
 
 Any anomaly freezes the agent in the gate at once (no new decisions, no claims) and then asks the guardian for the onchain `freeze_agent`. The `freeze` event says which of the two actually happened.
 
-**Not done yet:** the guardian's onchain freeze transaction is not wired (needs the deployed vault; M5), so today the `freeze` event reports `onchain: not_configured`. The stream itself and its filter are created in M5; the payload contract at the top of `anomaly.py` is what that filter must emit, and it has not been checked against a live QuickNode delivery.
+The guardian's `freeze_agent` transaction is wired (`app/chain/ops.py`, `GuardianFreezer`) and has been confirmed on a local validator, about two seconds after a drain transaction. **No real QuickNode delivery has been received yet**: the stream is not created. On a local validator, `app/quicknode/local_relay.py` posts QuickNode-signed deliveries built from real transactions; it is labelled `LOCAL RELAY (not QuickNode)`. The JavaScript filter and this parser are tested against each other (`tests/test_quicknode_filter.py`).
 
 Forging the webhook cannot move money. The most it can cause is a freeze.
 

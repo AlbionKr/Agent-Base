@@ -68,7 +68,9 @@ class Demo:
         self.gate = stack.services.gate
         self.cluster = explorer_cluster_param(stack.chain_settings.rpc_url)
         self.attacker = stack.attacker
-        self.agent_id = f"btc-trader-{int(time.time()) % 1_000_000}"
+        # A fixed id, so the agent keeps one hot wallet across runs and the stream
+        # filter (which lists the wallets to watch) stays valid.
+        self.agent_id = "btc-trader"
         self.scripted: list[Any] = []
         self.step_number = 0
 
@@ -160,7 +162,13 @@ class Demo:
                 )
             print(f"     naive agent wallet holds {units_to_usdc(await stack.naive_wallet.balance())} USDC")
 
-        # 3. the recorded feed starts over
+        # 3. the demo agent from an earlier run is unfrozen (owner only)
+        earlier = await stack.spender.state(self.agent_id)
+        if earlier is not None and earlier.frozen:
+            await stack.provisioner.unfreeze(self.agent_id)
+            print("     the demo agent was frozen by the last run: unfrozen by the owner")
+
+        # 4. the recorded feed starts over
         token = _env("NEWS_ADMIN_TOKEN")
         async with httpx.AsyncClient(timeout=10) as http:
             response = await http.post(f"{self.news_url}/admin/reset", headers={"Authorization": f"Bearer {token}"})
