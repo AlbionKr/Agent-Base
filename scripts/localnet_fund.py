@@ -25,7 +25,7 @@ from app.config import REPO_ROOT, load_chain_settings
 
 SOL = 1_000_000_000
 OWNER_USDC = usdc_to_units(Decimal("1000"))
-EXTRA_KEYS = ("naive-agent", "attacker", "news-seller")
+EXTRA_KEYS = ("naive-agent", "attacker", "news-seller", "local-facilitator")
 
 
 async def airdrop(chain: SolanaClient, address: Pubkey, lamports: int) -> None:
