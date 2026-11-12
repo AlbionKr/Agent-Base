@@ -14,9 +14,9 @@ UBC 2026 Hackathon — Agentic Payments & AI track · Best use of Solana · Gemi
 |---|---|---|
 | M1 | Repo scaffold, Day-1 verification, Gemini market data | done |
 | M2 | Vault program (Anchor) + tests, deployed to devnet | program + 26 tests done; **devnet deploy pending** (needs faucet funds) |
-| M3 | Policy engine + tests, agent loop, Gemini sandbox orders | policy engine + mandate + taint ledger done; agent loop and orders need API keys |
+| M3 | Policy engine + tests, agent loop, Gemini sandbox orders | policy engine, mandates, taint ledger and the backend service (gate, audit log, approval queue, event stream) done; agent loop and orders need API keys |
 | M4 | x402 paid news, taint tracking, Naive Agent | news server done (real 402 challenge verified); agent-side payment and Naive Agent need devnet funds |
-| M5 | QuickNode stream → webhook → anomaly → freeze | not started |
+| M5 | QuickNode stream → webhook → anomaly → freeze | webhook verification, anomaly rules and gate freeze done and tested with signed test deliveries; **live stream and onchain freeze pending** (need QuickNode token + deployed vault) |
 | M6 | ElevenLabs voice approval, dashboard, red-team suite | not started |
 | M7 | Base view (PixiJS), demo script | not started |
 | M8 | README, docs, fixes | not started |
@@ -34,7 +34,7 @@ Nothing is silently faked. Current and planned exceptions, each labeled in the U
 
 ```
 programs/vault   Anchor program (Rust)                                   M2
-backend          FastAPI: policy engine, agent runtime, executor, hooks  M1+
+backend          FastAPI: policy engine, gate, audit log, webhooks        M1+  (backend/README.md)
 x402-news        Express x402 paid news endpoint (TypeScript)            M4
 frontend         React + Vite + PixiJS                                   M6–M7
 redteam          attack cases + harness                                  M6
@@ -66,6 +66,12 @@ Run the tests:
 
 ```bash
 .venv/Scripts/python -m pytest
+```
+
+Run the backend (set `OWNER_ADDRESS` in `.env` first; details in [backend/README.md](backend/README.md)):
+
+```bash
+.venv/Scripts/python -m app.main
 ```
 
 Print live BTC 5-minute prediction markets from Gemini:

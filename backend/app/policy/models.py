@@ -141,6 +141,8 @@ class PolicyState:
 
     now: datetime
     history: tuple[PastAction, ...] = ()
+    # Set by the guardian path (QuickNode anomaly -> onchain freeze) or by the owner.
+    frozen: bool = False
 
 
 # --------------------------------------------------------------- decision

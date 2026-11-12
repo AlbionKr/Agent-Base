@@ -11,7 +11,7 @@ from pydantic import ValidationError
 from app.policy import engine
 from app.policy.engine import evaluate
 from app.policy.ledger import LedgerSnapshot
-from app.policy.models import Verdict, parse_action
+from app.policy.models import PolicyState, Verdict, parse_action
 from policy_fixtures import (
     ATTACKER,
     BTC_SYMBOL,
@@ -474,6 +474,22 @@ def test_history_order_does_not_matter():
 
 
 def test_every_rule_id_is_unique_and_documented():
-    assert len(set(engine.RULE_IDS)) == len(engine.RULE_IDS) == 14
+    assert len(set(engine.RULE_IDS)) == len(engine.RULE_IDS) == 15
     for _, rule in engine.RULES:
         assert rule.__name__.startswith("_rule_")
+
+
+# ------------------------------------------------------------ frozen agent
+
+
+def test_a_frozen_agent_is_denied_everything_and_says_so_first():
+    frozen = PolicyState(now=NOW, history=(), frozen=True)
+    for action in (news_payment(), order(), transfer()):
+        d = decide(action, st=frozen)
+        assert d.verdict is Verdict.DENY
+        assert d.rules_fired[0] == engine.AGENT_FROZEN
+        assert "frozen" in d.reason
+
+
+def test_an_agent_that_is_not_frozen_is_unaffected_by_the_freeze_rule():
+    assert engine.AGENT_FROZEN not in decide(news_payment()).rules_fired

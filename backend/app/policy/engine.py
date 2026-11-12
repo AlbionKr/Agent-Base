@@ -33,6 +33,7 @@ from app.policy.models import (
 )
 
 # Rule IDs, in evaluation order.
+AGENT_FROZEN = "AGENT_FROZEN"
 INPUT_INVALID = "INPUT_INVALID"
 MANDATE_EXPIRED = "MANDATE_EXPIRED"
 TAINT_NEW_PAYEE = "TAINT_NEW_PAYEE"
@@ -128,6 +129,15 @@ def _levenshtein(a: str, b: str, limit: int) -> int:
 
 
 # ------------------------------------------------------------------- rules
+
+
+def _rule_frozen(e: _Eval) -> None:
+    if e.state.frozen:
+        e.hit(
+            AGENT_FROZEN,
+            Verdict.DENY,
+            "This agent is frozen; nothing executes until the owner unfreezes it.",
+        )
 
 
 def _rule_input(e: _Eval) -> None:
@@ -340,6 +350,7 @@ def _rule_approval_threshold(e: _Eval) -> None:
 
 
 RULES: tuple[tuple[str, Callable[[_Eval], None]], ...] = (
+    (AGENT_FROZEN, _rule_frozen),
     (INPUT_INVALID, _rule_input),
     (MANDATE_EXPIRED, _rule_mandate_expired),
     (TAINT_NEW_PAYEE, _rule_taint_new_payee),
@@ -371,6 +382,11 @@ def _summary(action: Action, amount: Decimal) -> str:
     if isinstance(action, TransferAction):
         return f"transfer {_usd(amount)} to {_short(action.payee)}"
     return f"pay {_usd(amount)} to {_origin(action.url) or action.url}"
+
+
+def describe_action(action: Action) -> str:
+    """One line a human can approve or refuse, built only from the validated action."""
+    return _summary(action, amount_usd(action))
 
 
 def evaluate(
