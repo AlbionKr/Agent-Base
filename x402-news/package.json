@@ -1,0 +1,29 @@
+{
+  "name": "agentbase-x402-news",
+  "version": "0.1.0",
+  "private": true,
+  "description": "x402 V2 paid news endpoint on Solana devnet (recorded feed with planted attack posts)",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "tsx src/server.ts",
+    "test": "node --import tsx --test test/*.test.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@solana/kit": "^8.6.0",
+    "@x402/core": "~2.30.0",
+    "@x402/express": "~2.30.0",
+    "@x402/svm": "~2.30.0",
+    "dotenv": "^17.0.0",
+    "express": "^5.3.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^24.0.0",
+    "tsx": "^4.23.15",
+    "typescript": "^5.9.0"
+  }
+}

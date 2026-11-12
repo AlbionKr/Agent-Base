@@ -15,7 +15,7 @@ UBC 2026 Hackathon — Agentic Payments & AI track · Best use of Solana · Gemi
 | M1 | Repo scaffold, Day-1 verification, Gemini market data | done |
 | M2 | Vault program (Anchor) + tests, deployed to devnet | program + 26 tests done; **devnet deploy pending** (needs faucet funds) |
 | M3 | Policy engine + tests, agent loop, Gemini sandbox orders | policy engine + mandate + taint ledger done; agent loop and orders need API keys |
-| M4 | x402 paid news, taint tracking, Naive Agent | not started |
+| M4 | x402 paid news, taint tracking, Naive Agent | news server done (real 402 challenge verified); agent-side payment and Naive Agent need devnet funds |
 | M5 | QuickNode stream → webhook → anomaly → freeze | not started |
 | M6 | ElevenLabs voice approval, dashboard, red-team suite | not started |
 | M7 | Base view (PixiJS), demo script | not started |
@@ -28,7 +28,7 @@ Day-1 dependency checks: [docs/day1-verification.md](docs/day1-verification.md).
 Nothing is silently faked. Current and planned exceptions, each labeled in the UI:
 
 - **Gemini orders: `SANDBOX`.** Market data is real (public production API). Orders go to Gemini's sandbox, whose books are empty, so orders rest unfilled.
-- **News feed: `RECORDED FEED`** (from M4). A replayed feed with planted attack posts; live X is a stretch goal.
+- **News feed: `RECORDED FEED`.** Posts written for the demo with fictional authors, six of them planted attacks, replayed on a clock. Live X search is not implemented; the server refuses to start in `FEED_MODE=live`. See [x402-news/README.md](x402-news/README.md).
 
 ## Layout
 

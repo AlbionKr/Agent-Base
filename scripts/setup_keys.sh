@@ -9,7 +9,7 @@ set -euo pipefail
 cd "$(dirname "$(readlink -f "$0")")/.."
 mkdir -p .keys target/deploy
 
-for name in owner guardian vault-program; do
+for name in owner guardian vault-program news-seller attacker naive-agent; do
   file=".keys/${name}.json"
   if [ ! -f "$file" ]; then
     solana-keygen new --no-bip39-passphrase --silent --outfile "$file" >/dev/null
