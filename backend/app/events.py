@@ -85,8 +85,10 @@ class Journal:
 
 def format_sse(event: AuditEvent) -> str:
     # json.dumps escapes newlines, so the payload always fits on one data line.
+    # No `event:` field: every frame is a plain message, so a browser EventSource
+    # receives all kinds through one handler and cannot miss a kind it does not know.
     data = json.dumps(event.to_json(), separators=(",", ":"), ensure_ascii=False)
-    return f"id: {event.id}\nevent: {event.kind}\ndata: {data}\n\n"
+    return f"id: {event.id}\ndata: {data}\n\n"
 
 
 async def sse_frames(

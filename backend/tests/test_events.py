@@ -50,12 +50,12 @@ def test_format_sse_carries_the_audit_id_kind_and_json():
 
     lines = frame.split("\n")
     assert lines[0] == f"id: {event.id}"
-    assert lines[1] == "event: decision"
-    assert lines[2].startswith("data: ")
+    assert lines[1].startswith("data: ")
+    assert not any(line.startswith("event:") for line in lines)
     assert frame.endswith("\n\n")
     # One data line only: a newline inside the payload must not break the frame.
     assert len([line for line in lines if line.startswith("data:")]) == 1
-    body = json.loads(lines[2][len("data: "):])
+    body = json.loads(lines[1][len("data: "):])
     assert body == {
         "id": event.id,
         "at": "2026-11-14T12:00:00+00:00",
@@ -79,7 +79,8 @@ def test_stream_replays_missed_events_then_continues_live():
 
     second, third, frames = asyncio.run(run())
     assert frames[0].startswith(f"id: {second.id}\n")
-    assert frames[1].startswith(f"id: {third.id}\nevent: freeze\n")
+    assert frames[1].startswith(f"id: {third.id}\ndata: ")
+    assert '"kind":"freeze"' in frames[1]
 
 
 def test_stream_never_sends_an_event_twice():
