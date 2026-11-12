@@ -11,6 +11,7 @@ a decision.
 from __future__ import annotations
 
 import json
+import os
 from typing import Literal
 
 from fastapi import FastAPI, Query, Request
@@ -28,6 +29,7 @@ from app.events import sse_frames
 from app.gate import UnknownAgent
 from app.decimals import StrictDecimal
 from app.policy.mandate import Mandate, MandateError, SignedMandate
+from app.voice import VoiceUnavailable, signed_url, spoken_decision
 
 if TYPE_CHECKING:
     from app.stack import Stack
@@ -45,6 +47,22 @@ class ApprovalDecision(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     decision: Literal["approve", "deny"]
+
+
+class TranscriptTurn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    role: Literal["user", "agent"]
+    text: str = Field(max_length=2000)
+
+
+class VoiceDecision(BaseModel):
+    """What the ElevenLabs client tool reported, plus what was actually said."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    decision: Literal["approve", "deny"]
+    transcript: list[TranscriptTurn] = Field(default_factory=list, max_length=200)
 
 
 class CreateAgent(BaseModel):
@@ -142,6 +160,53 @@ def create_api_app(services: Services, stack: "Stack | None" = None) -> FastAPI:
             resolved = gate.resolve_approval(
                 approval_id, approve=body.decision == "approve", via="dashboard"
             )
+        except UnknownApproval:
+            return _error(404, f"unknown approval {approval_id!r}")
+        except AlreadyResolved as exc:
+            return _error(409, str(exc))
+        return resolved.to_json()
+
+    # --------------------------------------------------------------- voice
+
+    @app.get("/voice/session")
+    async def voice_session(approval_id: str):
+        """A signed ElevenLabs conversation URL and the words to speak, for one pending approval."""
+        approval = next((a for a in gate.pending_approvals() if a.approval_id == approval_id), None)
+        if approval is None:
+            return _error(404, f"no pending approval {approval_id!r}")
+        try:
+            url = await signed_url(
+                os.environ.get("ELEVENLABS_API_KEY", "").strip(),
+                os.environ.get("ELEVENLABS_AGENT_ID", "").strip(),
+            )
+        except VoiceUnavailable as exc:
+            return _error(503, str(exc))
+        name = next((a["agent_name"] for a in gate.agents() if a["agent_id"] == approval.agent_id), approval.agent_id)
+        return {
+            "signed_url": url,
+            "approval_id": approval.approval_id,
+            "deadline": approval.deadline.isoformat(),
+            # Built from the validated action only; never from model-written text.
+            "dynamic_variables": {
+                "agent_name": name,
+                "action_summary": approval.summary,
+                "amount_usd": str(approval.amount_usd),
+            },
+        }
+
+    @app.post("/approvals/{approval_id}/voice-decision")
+    async def voice_decision(approval_id: str, body: VoiceDecision):
+        human_said = spoken_decision([turn.text for turn in body.transcript if turn.role == "user"])
+        if body.decision == "approve" and human_said is None:
+            services.journal.emit(
+                "voice_mismatch",
+                {"approval_id": approval_id, "tool_said": body.decision, "human_said": human_said},
+            )
+            return _error(409, "not approved: the approval was not confirmed by the user's own words")
+        # A spoken "no" wins over whatever the voice model's tool call claimed.
+        approve = body.decision == "approve" and human_said == "approve"
+        try:
+            resolved = gate.resolve_approval(approval_id, approve=approve, via="voice")
         except UnknownApproval:
             return _error(404, f"unknown approval {approval_id!r}")
         except AlreadyResolved as exc:
