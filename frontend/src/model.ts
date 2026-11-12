@@ -62,6 +62,8 @@ export type Balances = {
   attacker_usdc: string | null;
 };
 
+export type Chapter = { number: number; total: number; title: string; eventId: number };
+
 export type World = {
   lastId: number;
   events: Ev[]; // newest last, capped
@@ -70,8 +72,14 @@ export type World = {
   news: NewsView[];
   balances: Balances | null;
   naiveLost: number;
+  /** The most the unprotected agent held, counting what it has lost since. */
+  naiveHeld: number;
   naiveProposer?: string;
-  counts: { allow: number; deny: number; approval: number; freezes: number };
+  /** USDC base units that left protected hot wallets with no allowed action behind them. */
+  protectedLostUnits: number;
+  /** The demo script's chapters for the current run, in order. */
+  chapters: Chapter[];
+  counts: { allow: number; deny: number; approval: number; freezes: number; refusedOnchain: number };
 };
 
 export const emptyWorld: World = {
@@ -82,7 +90,10 @@ export const emptyWorld: World = {
   news: [],
   balances: null,
   naiveLost: 0,
-  counts: { allow: 0, deny: 0, approval: 0, freezes: 0 },
+  naiveHeld: 0,
+  protectedLostUnits: 0,
+  chapters: [],
+  counts: { allow: 0, deny: 0, approval: 0, freezes: 0, refusedOnchain: 0 },
 };
 
 const MAX_EVENTS = 600;
@@ -160,10 +171,24 @@ export function reduce(world: World, ev: Ev): World {
       break;
     case "balances":
       w.balances = p as Balances;
+      // The balance and the loss arrive in separate events, so take the largest total seen.
+      if (p.naive) w.naiveHeld = Math.max(w.naiveHeld, Number(p.naive.usdc ?? 0) + w.naiveLost);
+      break;
+    case "chain_refusal":
+      w.counts = { ...w.counts, refusedOnchain: w.counts.refusedOnchain + 1 };
       break;
     case "naive_action":
       if (p.executed) w.naiveLost = w.naiveLost + Number(p.amount_usd ?? 0);
       break;
+    case "outflow_observed":
+      // Base units are whole numbers, so this sum is exact.
+      if (!p.matched_action_id) w.protectedLostUnits = w.protectedLostUnits + Number(p.amount_units ?? 0);
+      break;
+    case "demo_chapter": {
+      const chapter: Chapter = { number: p.number, total: p.total, title: p.title, eventId: ev.id };
+      w.chapters = p.number === 1 ? [chapter] : [...w.chapters, chapter];
+      break;
+    }
   }
   return w;
 }
@@ -187,8 +212,13 @@ export function usd(value: string | number | null | undefined): string {
   if (value === null || value === undefined || value === "") return "–";
   const n = Number(value);
   if (!Number.isFinite(n)) return String(value);
-  // Sub-cent prices matter here (news costs $0.001).
-  return `$${n < 0.01 && n > 0 ? n.toFixed(3) : n.toFixed(2)}`;
+  // Sub-cent amounts matter here (news costs $0.001), so they are not rounded away.
+  const subCent = Math.abs(n) < 1 && Math.abs(n - Math.round(n * 100) / 100) > 1e-9;
+  return `$${subCent ? n.toFixed(3) : n.toFixed(2)}`;
+}
+
+export function unitsToUsd(units: number): number {
+  return units / 1_000_000;
 }
 
 export async function getJson<T>(path: string): Promise<T> {

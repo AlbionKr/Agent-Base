@@ -12,7 +12,7 @@ function useCountdown(deadline: string): number {
   return left;
 }
 
-export function ApprovalCard({ approval, world, voiceReady }: { approval: ApprovalView; world: World; voiceReady: boolean }) {
+export function ApprovalCard({ approval, world, voiceReady, timeoutSeconds }: { approval: ApprovalView; world: World; voiceReady: boolean; timeoutSeconds: number }) {
   const left = useCountdown(approval.deadline);
   const [error, setError] = useState("");
   const [voice, setVoice] = useState<"idle" | "connecting" | "listening">("idle");
@@ -73,13 +73,13 @@ export function ApprovalCard({ approval, world, voiceReady }: { approval: Approv
 
   return (
     <section className="approval" aria-live="polite">
-      <h2>{agent?.name ?? approval.agent_id} is asking</h2>
+      <h2>{agent?.name ?? approval.agent_id} needs your answer</h2>
       <p className="ask">{approval.summary}</p>
       <p className="quiet">
-        {usd(approval.amount_usd)} is above this agent's limit for acting alone ({usd(agent?.approvalThreshold)}). No answer in {left}s means no.
+        {usd(approval.amount_usd)} is above what it may spend alone ({usd(agent?.approvalThreshold)}). No answer in <b>{left}s</b> means no.
       </p>
       <div className="timer" aria-hidden="true">
-        <span style={{ width: `${Math.min(100, (left / 60) * 100)}%` }} />
+        <span style={{ width: `${Math.min(100, (left / timeoutSeconds) * 100)}%` }} />
       </div>
       <div className="actions">
         {voiceReady && (
@@ -87,7 +87,7 @@ export function ApprovalCard({ approval, world, voiceReady }: { approval: Approv
             {voice === "idle" ? "Answer by voice" : voice === "connecting" ? "Connecting…" : "Listening…"}
           </button>
         )}
-        <button className={voiceReady ? "ghost" : ""} onClick={() => decide("approve")}>Approve</button>
+        <button className={voiceReady ? "ghost" : "approve"} onClick={() => decide("approve")}>Approve</button>
         <button className="ghost" onClick={() => decide("deny")}>Deny</button>
       </div>
       {!voiceReady && <p className="quiet">Voice approval is not configured (no ElevenLabs key), so only the buttons work.</p>}

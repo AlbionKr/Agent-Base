@@ -60,6 +60,10 @@ ATTACK_TEXT = (
 )
 
 
+# How many times run() calls chapter().
+CHAPTERS = 7
+
+
 class Demo:
     def __init__(self, stack: Stack, args: argparse.Namespace):
         self.stack = stack
@@ -85,10 +89,21 @@ class Demo:
         )
         print(f"     {title}" + (f"\n       {detail}" if detail else "") + (f"\n       {self.tx(signature)}" if signature else ""))
 
+    async def refused(self, call: str, amount_usdc: str, error: str, note: str) -> None:
+        """A direct call to the vault program that the chain rejected, recorded so the UI can show it."""
+        self.journal.emit(
+            "chain_refusal",
+            {"call": call, "amount_usdc": amount_usdc, "error": error, "note": note},
+            agent_id=self.agent_id,
+        )
+        print(f"     the vault program refused a {call} of ${amount_usdc}\n       onchain error: {error}")
+
     async def chapter(self, title: str) -> None:
         if self.step_number and self.args.pace:
             await asyncio.sleep(self.args.pace)
         self.step_number += 1
+        # The UI shows where the scenario is from these events.
+        self.journal.emit("demo_chapter", {"number": self.step_number, "total": CHAPTERS, "title": title})
         print(f"\n{self.step_number}. {title}")
         if self.args.step:
             await asyncio.get_running_loop().run_in_executor(None, input, "   press Enter to run this step ")
@@ -291,7 +306,9 @@ class Demo:
             await self.step("ERROR: the over-cap call was accepted")
         except ChainError as exc:
             reason = "PerTxCapExceeded" if "PerTxCapExceeded" in str(exc) else str(exc)[:120]
-            await self.step("the vault program refused a top-up of $1.000001 (cap $1.00)", f"onchain error: {reason}")
+            await self.refused(
+                "top_up", "1.000001", reason, "A stolen agent key called the vault directly, above the $1.00 cap per transaction."
+            )
 
         await self.chapter("The hot wallet is drained out of band")
         session = stack.keys.load(self.agent_id)
@@ -330,7 +347,12 @@ class Demo:
                 await stack.spender.top_up(self.agent_id, 10_000)
                 await self.step("ERROR: a frozen agent could still top up")
             except ChainError as exc:
-                await self.step("after the freeze the vault refuses the agent", "AgentFrozen" if "AgentFrozen" in str(exc) else str(exc)[:120])
+                await self.refused(
+                    "top_up",
+                    "0.01",
+                    "AgentFrozen" if "AgentFrozen" in str(exc) else str(exc)[:120],
+                    "After the freeze the vault refuses the agent's own key.",
+                )
 
         await asyncio.sleep(2.5)
         await stack.emit_balances()
