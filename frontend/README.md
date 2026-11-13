@@ -24,16 +24,18 @@ Runs the tests for the event reducer and the event wording (`src/model.test.ts`,
 
 ## What the Base view shows first
 
-The screen is built to be read in a few seconds, top to bottom:
+The screen is built to be read in a few seconds. A dark sidebar holds the name, the two views and the list of what is not fully live in this run. The content sits on a light sheet beside it, as a few rounded cards:
 
-1. **One sentence** in the top bar that says what the product is.
-2. **The scoreboard**, "Taken by attackers": two figures side by side.
-   - *With the guard*: USDC that left a protected hot wallet with no allowed action behind it (the sum of `outflow_observed` events without a matching action), and the onchain limit on further loss today (`balances`).
+1. **The dark panel at the top** says the state of the run in one sentence (`verdict()` in `src/describe.ts`), for example "Attackers took $2.00 without the guard, and $0.05 with it." Under it are the numbers behind the sentence:
+   - *With the guard*: USDC that left a protected hot wallet with no allowed action behind it (the sum of `outflow_observed` events without a matching action).
    - *Without it*: USDC the unprotected agent sent to the attacker (`naive_action` executed).
-   - Counters: allowed, blocked (policy denials plus calls the vault program refused), sent to a person, frozen.
-3. **The step rail**, only while `scripts/demo.py` runs: which chapter of the scenario is on screen (`demo_chapter`).
-4. **The map.**
-5. **The headline**: the latest event that is more than routine, in large type, with its outcome as a labelled tag.
+   - *Still at risk today*: what is left of the onchain daily allowance plus the hot wallet balance (`balances`).
+   - Counts: allowed, blocked (policy denials plus calls the vault program refused), asked a person, frozen.
+   While `scripts/demo.py` runs, the top line of the panel shows which chapter of the scenario is on screen (`demo_chapter`).
+2. **The map.**
+3. **The headline** under the map: the latest event that is more than routine, in large type, with its outcome as a labelled tag.
+
+A pending approval appears above the Timeline as a solid violet card: it is the one thing on the screen that needs the person.
 
 The Timeline on the right lists the same events, newest first, grouped under the demo chapter they belong to. Each entry carries its audit event id and, where there is one, a link to the transaction.
 
@@ -52,11 +54,11 @@ Outcome colours are always paired with a shape and a word, never used alone: gre
 | `naive_action` executed | coins pour from the unprotected agent's tent to the attacker; the tent turns red with a "Lost" plate |
 | `balances` | the numbers on the vault, wallets, meters and attacker |
 
-The bar at the bottom of every view lists what is not fully real in the current run (for example `LOCALNET`, `RECORDED FEED`, `SANDBOX`, `SCRIPTED` proposals). Those labels come from the backend's `/config` and from the events themselves.
+The sidebar lists, on every view, what is not fully real in the current run (for example `LOCALNET`, `RECORDED FEED`, `SANDBOX`, `SCRIPTED` proposals). Those labels come from the backend's `/config` and from the events themselves.
 
 ## Views
 
-- **Base**: the scoreboard, the map, the headline, the pending approval (voice or buttons), and the Timeline.
+- **Base**: the dark summary panel, the map, the headline, the pending approval (voice or buttons), and the Timeline.
 - **Dashboard**: the run in five numbers; agents with their onchain allowance and most-at-risk figure; the red-team scorecard as one bar (blocked, held for a person, partly blocked, not blocked), with what an unprotected agent would have lost next to what got out, and the cases filterable by outcome; the paid news with posts that caused a block marked; and the audit log with Explorer links.
 
 ## Not verified

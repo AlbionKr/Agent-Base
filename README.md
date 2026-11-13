@@ -228,7 +228,7 @@ Three cases let money out, by design, and the amounts are in the table. RT-19 is
 
 ## What is mocked, recorded, sandboxed or local
 
-Nothing is silently faked. Each of these is labelled in the bar at the bottom of every UI view and in `/config`.
+Nothing is silently faked. Each of these is labelled in the UI's sidebar, on every view, and in `/config`.
 
 - **`RECORDED FEED`** — the news posts are written for the demo, with fictional authors, and replayed on a clock. Six are planted attacks. Live X search is not implemented; the news server refuses to start in `FEED_MODE=live`.
 - **`SANDBOX`** — Gemini orders go only to Gemini's sandbox, whose books are empty, so orders rest unfilled. Market data is real. Until a sandbox key is set, the label reads `NOT CONFIGURED` and order execution fails with that message.

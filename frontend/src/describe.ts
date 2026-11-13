@@ -133,3 +133,21 @@ export function headline(world: World): Entry | null {
   }
   return null;
 }
+
+/** The state of the run as one sentence in two parts, for the large headline. */
+export function verdict(world: World): { lead: string; turn: string } {
+  if (Object.keys(world.agents).length === 0) {
+    return { lead: "No agent is placed yet.", turn: "Place one to put the guard up." };
+  }
+  const guarded = world.protectedLostUnits / 1_000_000;
+  if (world.naiveLost > 0) {
+    return {
+      lead: `Attackers took ${usd(world.naiveLost)} without the guard`,
+      turn: guarded > 0 ? `and ${usd(guarded)} with it.` : "and nothing with it.",
+    };
+  }
+  if (guarded > 0) {
+    return { lead: `Attackers took ${usd(guarded)} from the guarded agent.`, turn: "The onchain allowance capped the rest." };
+  }
+  return { lead: "Nothing has been taken.", turn: "Every action is checked before money moves." };
+}

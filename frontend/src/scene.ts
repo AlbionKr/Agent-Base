@@ -5,39 +5,41 @@ import { Application, Container, Graphics, Text, type TextStyleOptions } from "p
 import { short, usd, type Config, type Ev, type World } from "./model";
 import { FAMILIES, ruleFamily } from "./rules";
 
-const W = 1100;
+// Close to the shape of the map card, so the drawing fills it.
+const W = 880;
 const H = 520;
 
 const C = {
-  ink: 0x14262e,
-  inkSoft: 0x4b5f66,
-  ground: 0xdde5dc,
-  road: 0xc9d3c8,
-  brass: 0xc8962c,
-  brassDeep: 0x8f6a16,
+  ink: 0x1a1612,
+  inkSoft: 0x6f665b,
+  ground: 0xfaf7f2,
+  road: 0xe6ddd0,
+  brass: 0xd9a441,
+  brassDeep: 0x9a6d12,
   guard: 0x2f6f8f,
-  guardPale: 0xc3d7e0,
+  guardPale: 0xc9dbe3,
   attack: 0xc8322b,
   gate: 0x6b4fa0,
-  stone: 0x8c8f86,
-  paper: 0xf5f7f2,
+  stone: 0x8f887d,
+  paper: 0xffffff,
   ok: 0x2e7d4f,
 };
 
 const FONT = "Public Sans, system-ui, sans-serif";
-const DISPLAY = "Bricolage Grotesque, Public Sans, system-ui, sans-serif";
+const DISPLAY = "Public Sans, system-ui, sans-serif";
 
 type Pt = { x: number; y: number };
-const VAULT: Pt = { x: 550, y: 228 };
-const NEWS: Pt = { x: 880, y: 58 };
-const MARKET: Pt = { x: 1010, y: 150 };
-const ATTACKER: Pt = { x: 115, y: 400 };
-const PAYEES: Pt = { x: 115, y: 62 };
-const NAIVE: Pt = { x: 860, y: 408 };
+const VAULT: Pt = { x: 440, y: 228 };
+const NEWS: Pt = { x: 790, y: 56 };
+const MARKET: Pt = { x: 800, y: 188 };
+const ATTACKER: Pt = { x: 95, y: 405 };
+const PAYEES: Pt = { x: 95, y: 56 };
+const NAIVE: Pt = { x: 770, y: 420 };
+// Two agents sit either side of the vault; a third goes below it.
 const AGENT_SLOTS: Pt[] = [
-  { x: 325, y: 255 },
-  { x: 735, y: 190 },
-  { x: 545, y: 388 },
+  { x: 255, y: 248 },
+  { x: 625, y: 248 },
+  { x: 440, y: 392 },
 ];
 const WALL_R = 62;
 
@@ -135,7 +137,7 @@ export class Scene {
     g.clear();
     // contour lines, like a survey map
     for (let r = 120; r <= 600; r += 80) {
-      g.ellipse(VAULT.x, VAULT.y, r * 1.3, r * 0.72).stroke({ width: 1, color: C.road, alpha: 0.9 });
+      g.ellipse(VAULT.x, VAULT.y, r * 1.3, r * 0.72).stroke({ width: 1.5, color: C.road, alpha: 1 });
     }
   }
 
@@ -175,7 +177,6 @@ export class Scene {
     const labels = this.config?.labels ?? {};
 
     this.slots.forEach((slot) => this.road(roads, VAULT, slot));
-    this.road(roads, VAULT, NAIVE);
 
     // outposts
     this.post(NEWS, "News stand", `${usd("0.001")} a call over x402\n${labels.news_feed ?? ""}`, C.ink, (g) => {

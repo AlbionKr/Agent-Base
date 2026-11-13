@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { ApprovalCard } from "./Approval";
 import { Dashboard } from "./Dashboard";
-import { headline, timeline } from "./describe";
+import { headline, timeline, verdict } from "./describe";
 import { API, emptyWorld, getJson, pendingApprovals, postJson, reduceAll, unitsToUsd, usd, type Config, type Ev, type World } from "./model";
 import { Scene } from "./scene";
 import { Glyph, Tag, Tx } from "./ui";
@@ -67,51 +67,10 @@ function BaseMap({ world, config, sceneRef }: { world: World; config: Config | n
   return <div className="map" ref={host} role="img" aria-label="Map of the vault, its agents and the attacks against them" />;
 }
 
-/** The one comparison the whole product is about: what attackers took with the guard, and without it. */
-function Scoreline({ world }: { world: World }) {
-  const agents = Object.values(world.agents);
-  const bounds = agents.map((a) => world.balances?.agents[a.id]?.max_loss_bound_usdc).filter((b): b is string => b != null);
-  const bound = bounds.reduce((sum, b) => sum + Number(b), 0);
-  const hasNaive = world.balances?.naive != null || world.naiveLost > 0;
-  const guardedLost = unitsToUsd(world.protectedLostUnits);
-
-  return (
-    <section className="score" aria-label="What attackers took">
-      <h2>Taken by attackers</h2>
-      <div className="sides">
-        <div className="side guarded">
-          <p className="figure">{usd(guardedLost)}</p>
-          <p className="whose">with the guard{agents.length > 0 && <span> ({agents.map((a) => a.name).join(", ")})</span>}</p>
-          <p className="context">
-            {agents.length === 0
-              ? "No protected agent yet."
-              : bounds.length > 0
-                ? `The vault program lets at most ${usd(bound)} more leave today, even with a stolen key.`
-                : "The vault program caps what can leave, even with a stolen key."}
-          </p>
-        </div>
-        <div className={world.naiveLost > 0 ? "side bare hit" : "side bare"}>
-          <p className="figure">{hasNaive ? usd(world.naiveLost) : "–"}</p>
-          <p className="whose">without it{hasNaive && <span> (unprotected agent)</span>}</p>
-          <p className="context">
-            {hasNaive ? `It held ${usd(world.naiveHeld)} and read the same posts. Nothing checks its payments.` : "No unprotected agent in this run."}
-          </p>
-        </div>
-      </div>
-      <ul className="tally" aria-label="Outcomes so far">
-        <li className="ok"><Glyph tone="ok" /><b>{world.counts.allow}</b> allowed</li>
-        <li className="bad"><Glyph tone="bad" /><b>{world.counts.deny + world.counts.refusedOnchain}</b> blocked</li>
-        <li className="wait"><Glyph tone="wait" /><b>{world.counts.approval}</b> asked a person</li>
-        <li className="lock"><Glyph tone="lock" /><b>{world.counts.freezes}</b> frozen</li>
-      </ul>
-    </section>
-  );
-}
-
 /** Where the demo script is. Drawn only from the script's own chapter events. */
 function Rail({ world }: { world: World }) {
   const current = world.chapters[world.chapters.length - 1];
-  if (!current) return null;
+  if (!current) return <p className="creed">The AI proposes. The policy engine decides. The chain enforces.</p>;
   return (
     <div className="rail">
       <ol aria-hidden="true">
@@ -127,12 +86,41 @@ function Rail({ world }: { world: World }) {
   );
 }
 
+/** The state of the run in one sentence, then the numbers behind it. */
+function Hero({ world }: { world: World }) {
+  const agents = Object.values(world.agents);
+  const bounds = agents.map((a) => world.balances?.agents[a.id]?.max_loss_bound_usdc).filter((b): b is string => b != null);
+  const bound = bounds.reduce((sum, b) => sum + Number(b), 0);
+  const hasNaive = world.balances?.naive != null || world.naiveLost > 0;
+  const says = verdict(world);
+
+  return (
+    <section className="hero" aria-label="What attackers took, and what stopped them">
+      <div className="herotop">
+        <Rail world={world} />
+      </div>
+      <p className="says">
+        {says.lead} <em>{says.turn}</em>
+      </p>
+      <dl className="stats">
+        <div className="money"><dt>With the guard</dt><dd>{usd(unitsToUsd(world.protectedLostUnits))}</dd></div>
+        <div className={world.naiveLost > 0 ? "money hit" : "money"}><dt>Without it</dt><dd>{hasNaive ? usd(world.naiveLost) : "–"}</dd></div>
+        <div className="money" title="What is left of the onchain daily allowance plus the hot wallet balance"><dt>Still at risk today</dt><dd>{bounds.length > 0 ? usd(bound) : "–"}</dd></div>
+        <div className="ok"><dt><Glyph tone="ok" />Allowed</dt><dd>{world.counts.allow}</dd></div>
+        <div className="bad"><dt><Glyph tone="bad" />Blocked</dt><dd>{world.counts.deny + world.counts.refusedOnchain}</dd></div>
+        <div className="wait"><dt><Glyph tone="wait" />Asked a person</dt><dd>{world.counts.approval}</dd></div>
+        <div className="lock"><dt><Glyph tone="lock" />Frozen</dt><dd>{world.counts.freezes}</dd></div>
+      </dl>
+    </section>
+  );
+}
+
 function Legend() {
   return (
     <ul className="legend" aria-label="What the moving shapes mean">
-      <li><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><circle cx="7" cy="7" r="5" fill="var(--brass)" stroke="var(--ink)" strokeWidth="1.5" /></svg>money moving</li>
+      <li><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><circle cx="7" cy="7" r="5" fill="var(--accent)" stroke="var(--ink)" strokeWidth="1.5" /></svg>money moving</li>
       <li><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M7 1l6 6-6 6-6-6z" fill="var(--attack)" stroke="var(--ink)" strokeWidth="1.5" /></svg>attack</li>
-      <li><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><rect x="3" y="1.5" width="8" height="11" fill="var(--paper)" stroke="var(--ink)" strokeWidth="1.5" /></svg>something an agent read</li>
+      <li><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><rect x="3" y="1.5" width="8" height="11" fill="#fff" stroke="var(--ink)" strokeWidth="1.5" /></svg>something an agent read</li>
     </ul>
   );
 }
@@ -170,7 +158,7 @@ function RunStatus({ config, world }: { config: Config | null; world: World }) {
   ];
   const caveats = items.filter(([, , caveat]) => caveat).length;
   return (
-    <footer className="run">
+    <div className="run">
       <span className="lead">{caveats > 0 ? "Not fully live in this run" : "This run"}</span>
       <ul aria-label="What is real and what is not in this run">
         {items.map(([name, value, caveat]) => (
@@ -179,7 +167,7 @@ function RunStatus({ config, world }: { config: Config | null; world: World }) {
           </li>
         ))}
       </ul>
-    </footer>
+    </div>
   );
 }
 
@@ -239,36 +227,40 @@ export default function App() {
 
   return (
     <div className="app">
-      <header className="top">
+      <aside className="side">
         <div className="brand">
           <h1>Agent Base</h1>
-          <p>A guard for AI agents that hold money. The AI proposes, the policy engine decides, the chain enforces.</p>
+          <p>A guard for AI agents that hold money.</p>
         </div>
         <nav aria-label="Views">
           <button className={view === "base" ? "tab on" : "tab"} onClick={() => setView("base")}>Base</button>
           <button className={view === "dashboard" ? "tab on" : "tab"} onClick={() => setView("dashboard")}>Dashboard</button>
         </nav>
-        <span className={`conn ${connection}`}>{connection === "live" ? "Live" : connection === "connecting" ? "Connecting…" : "Backend not reachable"}</span>
-        <button onClick={() => setPlacing(true)} disabled={!config?.can_create_agents} title={config?.can_create_agents ? "" : "Needs the chain and the owner key"}>
-          Place an agent
-        </button>
-      </header>
-
-      {connection === "offline" && world.lastId === 0 && (
-        <p className="banner">
-          The backend is not answering at {API}. Start it with <code>python -m scripts.demo</code> or <code>python -m app.main</code>.
-        </p>
-      )}
+        <div className="sidefoot">
+          <span className={`conn ${connection}`}>{connection === "live" ? "Live" : connection === "connecting" ? "Connecting…" : "Backend not reachable"}</span>
+          <button className="cta" onClick={() => setPlacing(true)} disabled={!config?.can_create_agents} title={config?.can_create_agents ? "" : "Needs the chain and the owner key"}>
+            Place an agent
+          </button>
+        </div>
+      </aside>
+      <RunStatus config={config} world={world} />
 
       <main className={view}>
+        {connection === "offline" && world.lastId === 0 && (
+          <p className="banner">
+            The backend is not answering at {API}. Start it with <code>python -m scripts.demo</code> or <code>python -m app.main</code>.
+          </p>
+        )}
         <section className="stage" hidden={view !== "base"}>
           <div className="field">
-            <Scoreline world={world} />
-            <div className="strip">
-              <Rail world={world} />
-              <Legend />
+            <Hero world={world} />
+            <div className="mapcard">
+              <div className="maphead">
+                <h2>The base</h2>
+                <Legend />
+              </div>
+              <BaseMap world={world} config={config} sceneRef={sceneRef} />
             </div>
-            <BaseMap world={world} config={config} sceneRef={sceneRef} />
             <Now world={world} />
           </div>
           <aside className="watch" aria-label="Live activity">
@@ -313,7 +305,6 @@ export default function App() {
         {view === "dashboard" && <Dashboard world={world} config={config} />}
       </main>
 
-      <RunStatus config={config} world={world} />
       {placing && <PlaceAgent onClose={() => setPlacing(false)} />}
     </div>
   );
