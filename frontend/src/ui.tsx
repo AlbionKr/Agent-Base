@@ -48,10 +48,13 @@ export function Num({ value, format = String }: { value: number; format?: (n: nu
   useEffect(() => {
     const start = from.current;
     from.current = value;
-    if (REDUCED || start === value || !Number.isFinite(start) || !Number.isFinite(value)) {
+    // A hidden tab gets no animation frames, so there the number just changes.
+    if (REDUCED || document.hidden || start === value || !Number.isFinite(start) || !Number.isFinite(value)) {
       setShown(value);
       return;
     }
+    // Whatever happens to the frames, the exact value is on screen within a second.
+    const settle = setTimeout(() => setShown(value), 800);
     let frame = 0;
     const began = performance.now();
     const step = (now: number) => {
@@ -60,7 +63,10 @@ export function Num({ value, format = String }: { value: number; format?: (n: nu
       if (k < 1) frame = requestAnimationFrame(step);
     };
     frame = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(frame);
+    return () => {
+      cancelAnimationFrame(frame);
+      clearTimeout(settle);
+    };
   }, [value]);
   // On the way, whole cents (or whole numbers) keep the width steady.
   const text = shown === value ? format(value) : format === String ? String(Math.round(shown)) : format(Math.round(shown * 100) / 100);
