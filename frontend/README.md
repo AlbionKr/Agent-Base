@@ -73,7 +73,16 @@ One `requestAnimationFrame` loop in `src/space/engine.ts`. It stops while the ta
 
 ## Dashboard view
 
-The run in five numbers; agents with their onchain allowance and most-at-risk figure; the red-team scorecard as one bar (blocked, held for a person, partly blocked, not blocked), with what an unprotected agent would have lost next to what got out, and the cases filterable by outcome; the paid news with posts that caused a block marked; and the audit log with Explorer links.
+A sidebar of topics, one page each, so nothing competes on one long scroll. The page is kept in the address (`#/overview`, `#/agents/<id>`, ...), so the back button and shared links work.
+
+- **Overview**: what needs you first (a pending approval, or a frozen agent with an unfreeze button; a calm line when nothing does), then money today (a ring of the day's spend against all agents' daily caps, with the vault balance, what is still at risk and what was taken with and without the guard), the agents as cards with the ones that need you first, decisions over time, recent activity, and one card each for the red team, the paid news and what is live in this run, each with a link to its page.
+- **Agents**: one row per agent: status, spend against its cap, most at risk, decisions, last activity. Each row opens the agent's own page: budget, what a stolen key could take now, its decisions over time, the limits it signed, its activity, payments and reads, with run-a-cycle and unfreeze.
+- **Red team**: the scorecard as one bar, what an unprotected agent would lose next to what got out, and the cases filterable by outcome.
+- **Paid news**: every post bought over x402, attack posts marked with the decision that cited them.
+- **Audit log**: every event, filterable by outcome, with Explorer links.
+- **This run**: what is live and what is not, the program and vault accounts, and the policy engine's own numbers.
+
+"Decisions over time" splits the run into equal stretches and stacks allowed, asked and blocked in each (a call the vault program refused counts as blocked, as in the counts on the Base view). Hover a column for its counts. The helpers behind these pages are in `src/fleet.ts` and tested in `src/fleet.test.ts`.
 
 ## Reviewing one demo step
 

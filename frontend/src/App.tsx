@@ -2,6 +2,7 @@ import { AnimatePresence, MotionConfig, motion } from "framer-motion";
 import { useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { ApprovalCard } from "./Approval";
 import { Dashboard } from "./Dashboard";
+import { runParts } from "./fleet";
 import { describe, timeline, verdict, type Entry } from "./describe";
 import { Drawer, type Box } from "./Drawer";
 import { API, emptyWorld, getJson, pendingApprovals, postJson, reduceAll, unitsToUsd, usd, type Config, type Ev, type World } from "./model";
@@ -228,17 +229,7 @@ function Notices({ world }: { world: World }) {
 }
 
 function RunStatus({ config, world, connection }: { config: Config | null; world: World; connection: Connection }) {
-  const l = config?.labels ?? {};
-  const proposers = new Set(Object.values(world.agents).map((a) => a.proposer).filter(Boolean) as string[]);
-  const items: [string, string, boolean][] = config
-    ? [
-        ["Chain", l.cluster ?? "?", l.cluster !== "DEVNET"],
-        ["News", l.news_feed ?? "?", l.news_feed !== "LIVE FEED"],
-        ["Gemini orders", l.gemini_orders ?? "?", true],
-        ["Stream", l.stream ?? "?", l.stream !== "QuickNode Streams"],
-        ...[...proposers].map((p): [string, string, boolean] => ["Proposals", p, !p.startsWith("LLM")]),
-      ]
-    : [];
+  const items = runParts(config, world).map((p): [string, string, boolean] => [p.name, p.value, p.caveat]);
   const caveats = items.filter(([, , caveat]) => caveat).length;
   return (
     <footer className="strip">
@@ -390,7 +381,16 @@ export default function App() {
               </div>
             </aside>
           </section>
-          {view === "dashboard" && <Dashboard world={world} config={config} />}
+          {view === "dashboard" && (
+            <Dashboard
+              world={world}
+              config={config}
+              canPlace={!!config?.can_create_agents}
+              onPlace={() => setPlacing(true)}
+              voiceReady={config?.labels.voice === "ElevenLabs Agents"}
+              timeoutSeconds={config?.approval_timeout_seconds ?? 60}
+            />
+          )}
         </main>
 
         <RunStatus config={config} world={world} connection={connection} />

@@ -41,7 +41,7 @@ function Copy({ value }: { value: string }) {
   );
 }
 
-function Address({ value, config }: { value: string; config: Config | null }) {
+export function Address({ value, config }: { value: string; config: Config | null }) {
   return (
     <span className="address">
       <a href={explorerAddress(config, value)} target="_blank" rel="noreferrer" title={value}>{short(value)}</a>
@@ -50,7 +50,7 @@ function Address({ value, config }: { value: string; config: Config | null }) {
   );
 }
 
-function Events({ items, config, empty }: { items: Entry[]; config: Config | null; empty: string }) {
+export function Events({ items, config, empty }: { items: Entry[]; config: Config | null; empty: string }) {
   if (items.length === 0) return <p className="quiet">{empty}</p>;
   return (
     <ol className="log">
@@ -70,7 +70,7 @@ function Events({ items, config, empty }: { items: Entry[]; config: Config | nul
   );
 }
 
-function Posts({ items, empty }: { items: NewsView[]; empty: string }) {
+export function Posts({ items, empty }: { items: NewsView[]; empty: string }) {
   if (items.length === 0) return <p className="quiet">{empty}</p>;
   return (
     <ul className="posts">
@@ -85,7 +85,7 @@ function Posts({ items, empty }: { items: NewsView[]; empty: string }) {
   );
 }
 
-function Facts({ rows }: { rows: [string, React.ReactNode][] }) {
+export function Facts({ rows }: { rows: [string, React.ReactNode][] }) {
   return (
     <dl className="facts">
       {rows.map(([k, v]) => (
