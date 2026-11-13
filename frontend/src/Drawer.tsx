@@ -367,7 +367,7 @@ export function Drawer({ nodeId, from, world, config, onClose }: Props) {
   const agentId = nodeId.startsWith("agent:") ? nodeId.slice(6) : null;
   return (
     <>
-      <motion.div className="scrim" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} onClick={onClose} />
+      <motion.div className="scrim" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, transition: { duration: 0.15 } }} transition={{ duration: 0.2 }} onClick={onClose} />
       <motion.aside
         ref={panel}
         className="drawer"
@@ -377,14 +377,15 @@ export function Drawer({ nodeId, from, world, config, onClose }: Props) {
         style={{ left: rest.left, top: rest.top, width: rest.width, height: rest.height, transformOrigin: "0 0" }}
         initial={origin}
         animate={{ x: 0, y: 0, scaleX: 1, scaleY: 1, opacity: 1, borderRadius: 12 }}
-        exit={origin}
+        // opens on a spring from the node; closes faster, out of the way
+        exit={{ ...origin, transition: { duration: 0.18, ease: [0.4, 0, 1, 1] } }}
         transition={{ type: "spring", stiffness: 420, damping: 36, mass: 0.9 }}
         onKeyDown={onKeyDown}
       >
         <button className="close" onClick={onClose} aria-label="Close details">
           <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M2 2l10 10M12 2L2 12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
         </button>
-        <motion.div className="drawerbody" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.18, delay: 0.1 }}>
+        <motion.div className="drawerbody" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, transition: { duration: 0.08 } }} transition={{ duration: 0.18, delay: 0.1 }}>
           {agentId ? (
             <AgentPanel id={agentId} world={world} config={config} />
           ) : nodeId === "vault" ? (

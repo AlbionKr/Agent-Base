@@ -16,7 +16,7 @@ Opens on http://127.0.0.1:5173 and talks to the backend at http://127.0.0.1:8787
 npm test
 ```
 
-Runs the tests for the event reducer, the event wording, the map's nodes and the detail panel's selectors (`src/*.test.ts`).
+Runs the tests for the event reducer, the event wording, the map's nodes and the detail panel's selectors (`src/*.test.ts`), and the design rules (`src/design.test.ts`): type, spacing and radius on fixed scales, colours only from the tokens, no uppercase or tracked-out labels, monospace only for machine data, short transitions, no placeholder copy. The rules and where they come from are in [docs/design-notes.md](../docs/design-notes.md).
 
 ## Nothing is drawn without an event
 
@@ -61,7 +61,7 @@ Dark, with the vault as a glowing core and everything else in orbit around it.
 | `freeze` | an icy ring; the agent desaturates, gets a lock and a "Frozen onchain" tag, and glides to rest beside the vault |
 | `naive_action` executed | red motes from the unprotected agent to the attacker, a red flash and a "Lost" tag |
 
-Outcome colours are always paired with a word and a shape: green (allowed, done), red (attack blocked, or money lost), violet (a person decides), ice blue (frozen), amber (money; also "allowed but not run").
+Outcome colours are always paired with a word and a shape: green (allowed, done), red (attack blocked, or money lost), violet (a person decides), ice blue (frozen), amber (money; also "allowed but not run", the main button and the focus ring). Everything else is neutral, links included.
 
 ### Detail panels
 

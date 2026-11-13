@@ -216,7 +216,7 @@ function Notices({ world }: { world: World }) {
             <div className="logrow">
               <span className="dot" aria-hidden="true" />
               <span className="logtag">{line.tag}</span>
-              <span className="hud">audit event #{ev.id}</span>
+              <span className="meta">audit event #{ev.id}</span>
             </div>
             <p className="say">{line.title}</p>
             {line.detail && i === 0 && <p className="why">{line.detail}</p>}
@@ -367,7 +367,7 @@ export default function App() {
                 />
               ))}
               <div className="panel log-panel">
-                <h2 className="hud">Event log</h2>
+                <h2>Event log</h2>
                 <div className="logscroll">
                   {groups.length === 0 && <p className="quiet">Nothing yet. Every line here will be one entry of the audit log.</p>}
                   {groups.map((group, i) => (
