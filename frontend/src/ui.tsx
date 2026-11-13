@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from "react";
 import type { Tone } from "./describe";
 import { explorerTx, short, type Config } from "./model";
 
@@ -36,4 +37,32 @@ export function Tx({ config, signature }: { config: Config | null; signature?: s
       transaction {short(signature)}
     </a>
   );
+}
+
+const REDUCED = typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/** A number that counts to its new value when it changes. The value shown at rest is always the exact one. */
+export function Num({ value, format = String }: { value: number; format?: (n: number) => string }) {
+  const [shown, setShown] = useState(value);
+  const from = useRef(value);
+  useEffect(() => {
+    const start = from.current;
+    from.current = value;
+    if (REDUCED || start === value || !Number.isFinite(start) || !Number.isFinite(value)) {
+      setShown(value);
+      return;
+    }
+    let frame = 0;
+    const began = performance.now();
+    const step = (now: number) => {
+      const k = Math.min(1, (now - began) / 600);
+      setShown(k === 1 ? value : start + (value - start) * (1 - Math.pow(1 - k, 3)));
+      if (k < 1) frame = requestAnimationFrame(step);
+    };
+    frame = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(frame);
+  }, [value]);
+  // On the way, whole cents (or whole numbers) keep the width steady.
+  const text = shown === value ? format(value) : format === String ? String(Math.round(shown)) : format(Math.round(shown * 100) / 100);
+  return <span className="num">{text}</span>;
 }
