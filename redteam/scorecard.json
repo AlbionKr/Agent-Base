@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-12T09:23:54+00:00",
+  "generated_at": "2026-11-20T08:23:15+00:00",
   "mode": "assumed-compromise",
   "mode_note": "assumed-compromise: no LLM was called. Each case's steps are what a fully compromised agent would propose; the protected side is the real gate and policy engine, the naive side is computed (every well-formed action would execute).",
   "protected_agent": {
