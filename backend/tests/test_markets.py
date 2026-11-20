@@ -19,6 +19,8 @@ from app.gemini.markets import (
     GeminiAPIError,
     GeminiMarketsClient,
     flatten_rich_text,
+    market_data_label,
+    still_open,
 )
 
 FIXTURE = Path(__file__).parent / "fixtures" / "events_page.json"
@@ -190,3 +192,18 @@ def test_find_events_filters_by_ticker_prefix_across_pages():
     assert offsets == [0, 1]
     assert [e.ticker for e in events] == [raw["data"][0]["ticker"]]
     assert all(e.ticker.startswith("BTC05M") for e in events)
+
+
+def test_still_open_skips_markets_about_to_close():
+    from datetime import datetime, timedelta, timezone
+
+    now = datetime(2026, 11, 20, 7, 40, tzinfo=timezone.utc)
+    assert still_open(now + timedelta(minutes=10), now)
+    assert not still_open(now + timedelta(seconds=90), now)  # too close to trade
+    assert not still_open(now - timedelta(minutes=1), now)
+    assert still_open(None, now)  # no expiry given: not ours to drop
+
+
+def test_market_data_label_names_the_source():
+    assert market_data_label("https://api.gemini.com") == "live public API (read-only)"
+    assert market_data_label("https://api.sandbox.gemini.com/") == "SANDBOX market data (the books orders go to)"

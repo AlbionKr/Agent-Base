@@ -1,7 +1,7 @@
 """Place prediction-market orders on Gemini over WebSocket (`order.place`).
 
 SANDBOX ONLY. This build refuses to send an order anywhere but Gemini's sandbox,
-whose books are empty, so orders rest unfilled. The UI labels them `SANDBOX`.
+which trades test funds. The UI labels them `SANDBOX`.
 
 A hard cap on order notional is enforced here, in code, independently of the
 policy engine: even an order the gate allowed is refused if quantity x price
@@ -14,8 +14,9 @@ Protocol (developer.gemini.com/prediction-markets/getting-started):
     price, quantity, eventOutcome, clientOrderId}}
   * order updates arrive on the `orders@account` stream (X = status, i = order id)
 
-NOT YET VERIFIED LIVE: needs a sandbox API key. Message construction, signing and
-the cap are unit-tested; the socket exchange has not been run against Gemini.
+Verified live on 2026-11-20: with an account-scoped sandbox key, `order.place` was
+accepted and the order appeared as NEW/OPEN on the sandbox book (a $0.01 order on a
+BTC monthly contract and a 0.5 @ $0.40 order on a BTC 5-minute contract).
 """
 
 from __future__ import annotations

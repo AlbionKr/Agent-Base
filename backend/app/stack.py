@@ -38,7 +38,7 @@ from app.chain.ops import (
 from app.chain.units import units_to_usdc
 from app.config import REPO_ROOT, BackendSettings, ChainSettings, load_chain_settings
 from app.executor import Executor, Handler, vault_transfer_handler
-from app.gemini.markets import GeminiMarketsClient
+from app.gemini.markets import GeminiMarketsClient, market_data_label, still_open
 from app.gemini.trading import GeminiTrader
 from app.policy.mandate import Mandate, SignedMandate
 from app.quicknode.local_relay import LocalStreamRelay
@@ -57,17 +57,23 @@ def _usd(units: int | None) -> str | None:
 
 
 def gemini_market_source(base_url: str, patterns: tuple[str, ...], limit: int = 6) -> MarketSource | None:
-    """Live public market data for the mandate's markets (e.g. GEMI-BTC05M* -> ticker prefix BTC05M)."""
+    """Market data for the mandate's markets (e.g. GEMI-BTC05M* -> ticker prefix BTC05M).
+    Markets about to close are left out, so the agent is not shown one it cannot trade."""
     prefixes = [p[len("GEMI-"):].rstrip("*") for p in patterns if p.startswith("GEMI-") and p.endswith("*")]
     if not prefixes:
         return None
 
     async def fetch() -> list[dict[str, Any]]:
+        from datetime import datetime, timezone
+
+        now = datetime.now(timezone.utc)
         markets: list[dict[str, Any]] = []
         async with GeminiMarketsClient(base_url) as client:
             for prefix in prefixes:
                 for event in await client.find_events(ticker_prefix=prefix):
                     for contract in event.contracts:
+                        if not still_open(contract.expiry_date or event.expiry_date, now):
+                            continue
                         markets.append(
                             {
                                 "symbol": contract.instrument_symbol,
@@ -341,7 +347,7 @@ async def build_stack(settings: BackendSettings, *, audit: AuditLog | None = Non
         labels["gemini_orders"] = "SANDBOX"
     else:
         labels["gemini_orders"] = "NOT CONFIGURED (no sandbox API key)"
-    labels["gemini_market_data"] = "live public API (read-only)"
+    labels["gemini_market_data"] = market_data_label(_env("GEMINI_MARKET_DATA_URL", "https://api.gemini.com"))
     labels["news_feed"] = "RECORDED FEED" if _env("FEED_MODE", "recorded") == "recorded" else "LIVE FEED"
     labels["x402_facilitator"] = _env("X402_FACILITATOR_URL", "https://x402.org/facilitator")
     labels["llm"] = (

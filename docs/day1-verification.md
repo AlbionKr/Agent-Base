@@ -14,7 +14,8 @@ Run 2026-11-11. Everything below was checked against the live service, not taken
 
 ## Things that differ from what a tutorial would tell you
 
-- **Sandbox order books are empty.** Sandbox contracts return `prices: {"buy": {}, "sell": {}}`. Sandbox orders can be placed but will rest unfilled. The agent therefore reads prices from the public production API and sends orders to the sandbox. The UI and README label this `SANDBOX`.
+- **Update, 2026-11-20:** the sandbox books now have test liquidity, and `order.place` with an account-scoped sandbox key was accepted (orders appeared as NEW/OPEN). Market data now points at the sandbox so the agent sees the books it trades on.
+- **Sandbox order books were empty on Day 1.** Sandbox contracts return `prices: {"buy": {}, "sell": {}}`. Sandbox orders can be placed but will rest unfilled. The agent therefore reads prices from the public production API and sends orders to the sandbox. The UI and README label this `SANDBOX`.
 - **Sandbox `search` parameter returns HTTP 503.** `?search=BTC` works on production and fails on sandbox; `?category=crypto` works on both. `GeminiMarketsClient.find_events` filters by ticker prefix client-side so it behaves the same on both.
 - **Production and sandbox list the same upcoming 5-minute symbols.** `python -m scripts.print_markets --sandbox-parity` showed every upcoming `GEMI-BTC05M…-UP` contract present in both. The agent only trades symbols that exist in the sandbox.
 - **X API has no free tier.** Pay-per-use, roughly $0.005 per post read (third-party reporting; confirm in the X developer console before buying credits). Live X is a stretch goal; the demo uses the recorded feed.

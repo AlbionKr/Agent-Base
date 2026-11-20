@@ -47,7 +47,7 @@ from app.chain.ops import explorer_cluster_param
 from app.chain.units import units_to_usdc, usdc_to_units
 from app.config import REPO_ROOT, load_backend_settings
 from app.gate import NotExecutable
-from app.gemini.markets import GeminiMarketsClient
+from app.gemini.markets import GeminiMarketsClient, still_open
 from app.main import start, stop
 from app.policy.mandate import Mandate
 from app.stack import Stack, _env
@@ -367,13 +367,15 @@ class Demo:
         print(f"     decisions            {len(metrics)}; audit events {stack.services.audit.last_id()}")
 
     async def current_symbol(self) -> str:
-        """A BTC 5-minute contract that exists right now on Gemini (public market data)."""
+        """A BTC 5-minute contract that is open now and not about to close, from the configured market data."""
         try:
             async with GeminiMarketsClient(_env("GEMINI_MARKET_DATA_URL", "https://api.gemini.com")) as client:
                 events = await client.find_events(ticker_prefix="BTC05M")
+            now = datetime.now(timezone.utc)
             for event in events:
                 for contract in event.contracts:
-                    return contract.instrument_symbol
+                    if still_open(contract.expiry_date or event.expiry_date, now):
+                        return contract.instrument_symbol
         except Exception as exc:
             print(f"       Gemini market data unavailable ({type(exc).__name__}); using a symbol in the mandate's pattern")
         return "GEMI-BTC05M" + datetime.now(timezone.utc).strftime("%y%m%d%H%M") + "-UP"

@@ -29,6 +29,25 @@ PRODUCTION_URL = "https://api.gemini.com"
 SANDBOX_URL = "https://api.sandbox.gemini.com"
 EVENTS_PATH = "/v1/prediction-markets/events"
 
+# A 5-minute market that closes inside this margin is skipped: an order sent now
+# would likely reach a market that is no longer open.
+CLOSE_MARGIN_SECONDS = 120
+
+
+def still_open(expiry: datetime | None, now: datetime, margin_seconds: int = CLOSE_MARGIN_SECONDS) -> bool:
+    """True if a market with this expiry can still take an order (None: no expiry given)."""
+    if expiry is None:
+        return True
+    return (expiry - now).total_seconds() > margin_seconds
+
+
+def market_data_label(base_url: str) -> str:
+    """What the UI calls the market data source. Orders only ever go to the sandbox,
+    so pointing market data at the sandbox makes the agent see the books it trades on."""
+    if base_url.rstrip("/") == SANDBOX_URL:
+        return "SANDBOX market data (the books orders go to)"
+    return "live public API (read-only)"
+
 
 class GeminiAPIError(RuntimeError):
     """A non-200 response from Gemini. Never swallowed."""
