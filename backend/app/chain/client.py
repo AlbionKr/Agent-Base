@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 from pathlib import Path
-from typing import Sequence
+from typing import Any, Awaitable, Callable, Sequence
 
+from solana.exceptions import SolanaRpcException
 from solana.rpc.async_api import AsyncClient
 from solana.rpc.commitment import Confirmed
 from solders.instruction import Instruction
@@ -21,6 +23,15 @@ class ChainError(RuntimeError):
     def __init__(self, message: str, logs: Sequence[str] = ()):
         self.logs = list(logs)
         super().__init__(message)
+
+
+class RpcUnavailable(RuntimeError):
+    """The RPC did not answer (rate limit, network). Deliberately NOT a ChainError:
+    "the chain refused this" must never be inferred from a request that got no answer."""
+
+
+# Public RPCs rate-limit. Waits between retries of a call that got no answer.
+RETRY_DELAYS = (0.5, 1.5, 4.0)
 
 
 def load_keypair(path: str | Path) -> Keypair:
@@ -47,9 +58,21 @@ def explorer_address(address: Pubkey | str, cluster: str = "devnet") -> str:
 
 
 class SolanaClient:
-    def __init__(self, rpc_url: str):
+    def __init__(self, rpc_url: str, retry_delays: Sequence[float] = RETRY_DELAYS):
         self.rpc_url = rpc_url
         self.rpc = AsyncClient(rpc_url, commitment=Confirmed)
+        self._retry_delays = tuple(retry_delays)
+
+    async def _call(self, what: str, call: Callable[[], Awaitable[Any]]) -> Any:
+        """Run one RPC call, retrying only when the RPC gave no answer. An answer that
+        says no (a rejected transaction) is raised straight through, untouched."""
+        for delay in (*self._retry_delays, None):
+            try:
+                return await call()
+            except SolanaRpcException as exc:
+                if delay is None:
+                    raise RpcUnavailable(f"{what}: no answer from {self.rpc_url} ({_describe(exc)})") from exc
+                await asyncio.sleep(delay)
 
     async def __aenter__(self) -> "SolanaClient":
         return self
@@ -64,7 +87,7 @@ class SolanaClient:
         signers: Sequence[Keypair] = (),
     ) -> str:
         """Sign, send and confirm. Returns the signature. Raises ChainError on failure."""
-        latest = (await self.rpc.get_latest_blockhash()).value
+        latest = (await self._call("get_latest_blockhash", self.rpc.get_latest_blockhash)).value
         message = MessageV0.try_compile(
             payer.pubkey(), list(instructions), [], latest.blockhash
         )
@@ -77,14 +100,20 @@ class SolanaClient:
         tx = VersionedTransaction(message, ordered)
 
         try:
-            signature = (await self.rpc.send_transaction(tx)).value
+            # the same signed transaction each time, so a retry cannot send it twice
+            signature = (await self._call("send_transaction", lambda: self.rpc.send_transaction(tx))).value
+        except RpcUnavailable:
+            raise
         except Exception as exc:  # preflight simulation failed
             raise ChainError(_describe(exc), _logs_of(exc)) from exc
 
-        statuses = await self.rpc.confirm_transaction(
-            signature,
-            commitment=Confirmed,
-            last_valid_block_height=latest.last_valid_block_height,
+        statuses = await self._call(
+            "confirm_transaction",
+            lambda: self.rpc.confirm_transaction(
+                signature,
+                commitment=Confirmed,
+                last_valid_block_height=latest.last_valid_block_height,
+            ),
         )
         status = statuses.value[0] if statuses.value else None
         if status is None:
@@ -94,18 +123,20 @@ class SolanaClient:
         return str(signature)
 
     async def account_data(self, address: Pubkey) -> bytes | None:
-        value = (await self.rpc.get_account_info(address)).value
+        value = (await self._call("get_account_info", lambda: self.rpc.get_account_info(address))).value
         return None if value is None else bytes(value.data)
 
     async def sol_balance(self, address: Pubkey) -> int:
         """Lamports."""
-        return (await self.rpc.get_balance(address)).value
+        return (await self._call("get_balance", lambda: self.rpc.get_balance(address))).value
 
     async def token_balance(self, token_account: Pubkey) -> int | None:
         """Base units, or None if the token account does not exist."""
         if await self.account_data(token_account) is None:
             return None
-        return int((await self.rpc.get_token_account_balance(token_account)).value.amount)
+        return int(
+            (await self._call("get_token_account_balance", lambda: self.rpc.get_token_account_balance(token_account))).value.amount
+        )
 
 
 def _logs_of(exc: Exception) -> list[str]:

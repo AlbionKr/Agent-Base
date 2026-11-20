@@ -17,7 +17,7 @@ Read this first. Everything below it describes the system as built; this table s
 
 | Part | State |
 |---|---|
-| Vault program (Anchor) | Built. 26 program tests pass. Runs on a local validator. **Not yet deployed to devnet** (the owner wallet has no devnet SOL). |
+| Vault program (Anchor) | **Deployed to devnet** ([program](https://explorer.solana.com/address/8en8vCL4DR8e3Y739FSgKtLzFvTwiMvD8GVgnKGTBV2x?cluster=devnet)). 26 program tests pass. On devnet so far: [vault created](https://explorer.solana.com/tx/5SMH6PXk7mB7yrX6VX94AxZpcuFMBZLh9Z1V8vVcsywSWhDGAjVLTyf12hxQ6e92r3nyCXkYWC5JK3fyNWd7qdHq?cluster=devnet), [10 USDC deposited](https://explorer.solana.com/tx/uZcHWHh4APcTWsg9iSuvfkphDPsrJYWQNQDnW4nNov3bEg5XE4U3zwVWMwLFGR9aezMcpZSAqaqjChMWHqe3aFY?cluster=devnet), [agent allowance created](https://explorer.solana.com/tx/5EZ1sC1rV7i6KhkLZzFmGMj2nT7h1YkGqvGinqsczsixW1DGwT8FnjrseUr6GTF37oyQuHFAgzgGtQNfcpkCzS8p?cluster=devnet), [a capped top-up](https://explorer.solana.com/tx/5BtgwtL52zz7tDmx9CjzoWAukj8Bqrzghd1bhbvcBttYHeAjcbkf4cm73eLtUstsicAMYnR2ETYyQ6xtbcA3TBA5?cluster=devnet), and a top-up over the per-transaction cap refused by the program itself (`PerTxCapExceeded`). |
 | Policy engine, gate, audit log, approvals | Built and tested (466 Python tests). |
 | x402 paid news | Seller verified against the public facilitator (real 402 challenge). A full paid request has been settled **on the local validator only**, through a self-hosted facilitator. Not yet settled on devnet (needs devnet USDC). |
 | Full demo scenario | Runs end to end on the local validator with real transactions (`python -m scripts.demo`). **Not yet run on devnet.** |
@@ -120,7 +120,7 @@ docs             Day-1 verification, architecture, threat model
 
 ## How it uses Solana
 
-**Program ID:** `8en8vCL4DR8e3Y739FSgKtLzFvTwiMvD8GVgnKGTBV2x` (vault program; **not yet deployed to devnet**, see the status table). Source: [programs/vault](programs/vault).
+**Program ID:** `8en8vCL4DR8e3Y739FSgKtLzFvTwiMvD8GVgnKGTBV2x` (vault program, deployed to devnet: [Explorer](https://explorer.solana.com/address/8en8vCL4DR8e3Y739FSgKtLzFvTwiMvD8GVgnKGTBV2x?cluster=devnet)). Source: [programs/vault](programs/vault).
 
 - `Vault` (PDA per owner) holds USDC in its own token account and records the owner and a guardian.
 - `AgentAllowance` (PDA per agent) holds the agent's session key, expiry, per-transaction cap, daily cap with a rolling 24 h window, payee allowlist (up to 8), freeze flag, and the SHA-256 of the signed mandate.
@@ -326,7 +326,7 @@ SOLANA_RPC_URL=http://127.0.0.1:8899 X402_FACILITATOR_URL=http://127.0.0.1:4022 
 4. Create the stream ([quicknode/README.md](quicknode/README.md)) and point it at a tunnel to port 8788.
 5. `cd x402-news && npm start`, `cd frontend && npm run dev`, `.venv/Scripts/python -m scripts.demo --proposer llm`.
 
-This path has not been run yet.
+Steps 1 and 2 have been run (2026-11-20). Steps 3 to 5 have not all been run yet; the status table at the top says which parts have.
 
 ## Secrets
 
