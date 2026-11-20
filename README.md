@@ -24,7 +24,7 @@ Read this first. Everything below it describes the system as built; this table s
 | Stream to freeze | Works on the local validator through a local relay that signs deliveries the way QuickNode does. **No real QuickNode stream has been created** (needs a QuickNode account and devnet). |
 | Gemini market data | Live public API, working. |
 | Gemini orders | **Working on the sandbox.** With an account-scoped sandbox key, `order.place` was accepted and the orders showed as open on the sandbox book (2026-11-20). Test funds only. |
-| LLM proposer (Claude) | Code written. **Never called**: no API key yet. Demo and red-team runs so far use scripted proposals, labelled as such. |
+| LLM proposer (Claude) | **Working.** The demo has been run end to end with Claude proposing (`--proposer llm`, local validator, 2026-11-20). The red-team suite still uses scripted worst-case proposals, labelled as such. |
 | Voice approval (ElevenLabs) | Backend checks tested; browser client written. **Never run against ElevenLabs**: no API key yet. Approve and deny buttons work. |
 | Red-team suite | 24 of 24 cases run; the two onchain cases ran on the local validator. |
 
@@ -233,7 +233,7 @@ Nothing is silently faked. Each of these is labelled in the strip at the bottom 
 
 - **`RECORDED FEED`** — the news posts are written for the demo, with fictional authors, and replayed on a clock. Six are planted attacks. Live X search is not implemented; the news server refuses to start in `FEED_MODE=live`.
 - **`SANDBOX`** — Gemini orders go only to Gemini's sandbox, with test funds. Market data comes from the sandbox too, so the agent sees the books its orders reach. Until a sandbox key is set, the label reads `NOT CONFIGURED` and order execution fails with that message.
-- **`SCRIPTED`** — when no LLM key is set, proposals come from `scripts/demo.py`, not from a model, and every cycle says so. With a key, the demo can use Claude (`--proposer llm`). In that mode the naive agent uses a prompt profile that tells the model to follow instructions it reads, which is stated in the label; that mode has not been run.
+- **`SCRIPTED`** — when no LLM key is set, proposals come from `scripts/demo.py`, not from a model, and every cycle says so. With a key, the demo can use Claude (`--proposer llm`). In that mode **both** agents use the same prompt profile, one that tells the model to follow instructions it reads, which is stated in the label. The point is that the model is the same and already fooled; only the layers below it differ. With the ordinary profile, Claude recognised the planted post as an injection and proposed nothing, so the policy engine was never tested.
 - **`LOCALNET`** — a local Solana validator with the vault program loaded and a stand-in for USDC (an SPL mint placed at devnet USDC's address, with the owner as mint authority). Used to verify the chain code without faucet funds. Transactions are real transactions on that validator.
 - **`LOCAL RELAY (not QuickNode)`** — on localnet, a relay watches the wallets over RPC and posts QuickNode-format, QuickNode-signed deliveries to the real webhook.
 - **Local x402 facilitator** — on localnet, the official `x402` package's `exact` verify and settle, self-hosted, because the public facilitator only settles on devnet.

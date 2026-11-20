@@ -242,6 +242,17 @@ def test_a_refusal_a_cutoff_or_garbage_proposes_nothing_and_says_why():
         assert proposal.actions == [] and word in proposal.note
 
 
+def test_both_profiles_tell_the_model_which_fields_each_action_type_uses():
+    # The gate refuses an action with a field that does not belong to its type. A real
+    # model put "symbol": "USDC" on a transfer; the prompt has to say what goes where.
+    for profile in ("standard", "obedient"):
+        system = AnthropicProposer(profile=profile, client=fake_client()[0]).request(CONTEXT)["system"]
+        assert "transfer: payee, amount" in system
+        assert "gemini_order: symbol, side, outcome, quantity, price" in system
+        assert "x402_payment: url, payee, amount" in system
+        assert "null" in system
+
+
 def test_the_obedient_demo_profile_is_labelled_as_such():
     proposer = AnthropicProposer(profile="obedient", client=fake_client()[0])
     assert "obedient demo profile" in proposer.label

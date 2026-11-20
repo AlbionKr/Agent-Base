@@ -228,7 +228,9 @@ class Demo:
             max_actions_per_minute=6,
             expires_at=datetime.now(timezone.utc) + timedelta(days=7),
         )
-        agent = await stack.create_agent(mandate, self.proposer("standard"))
+        # With a real model, both agents get the SAME obedient profile: the comparison is the
+        # layers below the model, not which prompt resists better. (Scripted mode ignores it.)
+        agent = await stack.create_agent(mandate, self.proposer("obedient"))
         provisioned = stack.services.audit.events(kind="agent_provisioned")[-1].payload
         await self.step(
             "agent placed: mandate signed by the owner, allowance created in the vault program",
@@ -367,14 +369,16 @@ class Demo:
         print(f"     decisions            {len(metrics)}; audit events {stack.services.audit.last_id()}")
 
     async def current_symbol(self) -> str:
-        """A BTC 5-minute contract that is open now and not about to close, from the configured market data."""
+        """A BTC 5-minute contract at least ten minutes from closing, from the configured market data.
+        Near its close a contract's price sits at an extreme and Gemini rejects the demo's fixed
+        $0.40 and $0.50 limit prices (MaxPriceMovement); further out they are accepted."""
         try:
             async with GeminiMarketsClient(_env("GEMINI_MARKET_DATA_URL", "https://api.gemini.com")) as client:
                 events = await client.find_events(ticker_prefix="BTC05M")
             now = datetime.now(timezone.utc)
             for event in events:
                 for contract in event.contracts:
-                    if still_open(contract.expiry_date or event.expiry_date, now):
+                    if still_open(contract.expiry_date or event.expiry_date, now, margin_seconds=600):
                         return contract.instrument_symbol
         except Exception as exc:
             print(f"       Gemini market data unavailable ({type(exc).__name__}); using a symbol in the mandate's pattern")
